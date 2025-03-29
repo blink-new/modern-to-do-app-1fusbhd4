@@ -18,14 +18,15 @@ import { AnimatePresence } from "framer-motion";
 import { Plus, AlertCircle, ListFilter } from "lucide-react";
 import { Layout } from "./components/ui/Layout";
 import { TaskItem } from "./components/TaskItem";
+import { TaskModal } from "./components/TaskModal";
 import { Dashboard } from "./components/Dashboard";
 import { Settings } from "./components/Settings";
 import type { Task, UserPreferences } from "./lib/types";
-import { generateId, saveToLocalStorage, loadFromLocalStorage } from "./lib/utils";
+import { saveToLocalStorage, loadFromLocalStorage } from "./lib/utils";
 
 export default function App() {
   const [tasks, setTasks] = useState<Task[]>([]);
-  const [newTask, setNewTask] = useState("");
+  const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
   const [filter, setFilter] = useState<"all" | "active" | "completed">("all");
   const [view, setView] = useState<"tasks" | "dashboard" | "settings">("tasks");
   const [preferences, setPreferences] = useState<UserPreferences>({
@@ -64,21 +65,8 @@ export default function App() {
     }
   };
 
-  const addTask = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newTask.trim()) return;
-
-    const task: Task = {
-      id: generateId(),
-      content: newTask,
-      completed: false,
-      createdAt: new Date(),
-      priority: preferences.defaultPriority,
-      category: preferences.defaultCategory,
-    };
-
+  const addTask = (task: Task) => {
     setTasks([task, ...tasks]);
-    setNewTask("");
 
     if (preferences.soundEnabled) {
       // Play a subtle sound effect
@@ -138,22 +126,13 @@ export default function App() {
                 </select>
               </div>
 
-              <form onSubmit={addTask} className="flex gap-2">
-                <input
-                  type="text"
-                  value={newTask}
-                  onChange={(e) => setNewTask(e.target.value)}
-                  placeholder="Add a new task..."
-                  className="w-80 rounded-lg border border-gray-300 px-4 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                />
-                <button
-                  type="submit"
-                  className="flex items-center gap-1 rounded-lg bg-blue-500 px-4 py-2 text-sm font-medium text-white hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-                >
-                  <Plus className="h-4 w-4" />
-                  Add Task
-                </button>
-              </form>
+              <button
+                onClick={() => setIsTaskModalOpen(true)}
+                className="flex items-center gap-1 rounded-lg bg-blue-500 px-4 py-2 text-sm font-medium text-white hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+              >
+                <Plus className="h-4 w-4" />
+                Add Task
+              </button>
             </div>
 
             <DndContext
@@ -192,6 +171,12 @@ export default function App() {
                 </p>
               </div>
             )}
+
+            <TaskModal
+              isOpen={isTaskModalOpen}
+              onClose={() => setIsTaskModalOpen(false)}
+              onSubmit={addTask}
+            />
           </>
         );
     }
