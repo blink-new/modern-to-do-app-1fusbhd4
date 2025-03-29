@@ -1,7 +1,7 @@
 
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Calendar, Tag, AlertCircle, Clock, AlignLeft } from 'lucide-react';
+import { X, Calendar, Tag, AlertCircle } from 'lucide-react';
 import type { Category, Priority, Task } from '../lib/types';
 import { generateId } from '../lib/utils';
 
@@ -58,35 +58,35 @@ export function TaskModal({ isOpen, onClose, onSubmit }: TaskModalProps) {
           {/* Backdrop */}
           <motion.div
             initial={{ opacity: 0 }}
-            animate={{ opacity: 0.4 }}
+            animate={{ opacity: 0.5 }}
             exit={{ opacity: 0 }}
             onClick={handleClose}
-            className="fixed inset-0 z-40 bg-black"
+            className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm"
           />
 
           {/* Modal */}
           <motion.div
-            initial={{ opacity: 0, scale: 0.95, y: 10 }}
+            initial={{ opacity: 0, scale: 0.95, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.95, y: 10 }}
-            transition={{ type: "spring", duration: 0.3 }}
-            className="fixed left-1/2 top-1/2 z-50 w-full max-w-lg -translate-x-1/2 -translate-y-1/2 transform"
+            exit={{ opacity: 0, scale: 0.95, y: 20 }}
+            transition={{ type: "spring", damping: 20, stiffness: 300 }}
+            className="fixed left-1/2 top-1/2 z-50 w-[480px] -translate-x-1/2 -translate-y-1/2 transform"
           >
-            <div className="rounded-xl bg-white shadow-2xl">
+            <div className="overflow-hidden rounded-xl bg-white shadow-xl ring-1 ring-black/5">
               {/* Header */}
-              <div className="flex items-center justify-between border-b px-6 py-4">
-                <h2 className="text-lg font-medium text-gray-900">Create New Task</h2>
+              <div className="flex items-center justify-between border-b border-gray-100 px-4 py-3">
+                <h2 className="text-base font-semibold text-gray-900">Create New Task</h2>
                 <button
                   onClick={handleClose}
-                  className="rounded-lg p-1 hover:bg-gray-100"
+                  className="rounded-lg p-1 hover:bg-gray-50 active:bg-gray-100"
                 >
-                  <X className="h-5 w-5 text-gray-500" />
+                  <X className="h-5 w-5 text-gray-400" />
                 </button>
               </div>
 
               {/* Form */}
-              <form onSubmit={handleSubmit} className="p-6">
-                <div className="space-y-6">
+              <form onSubmit={handleSubmit} className="p-4">
+                <div className="space-y-4">
                   {/* Task Name */}
                   <div>
                     <input
@@ -94,37 +94,36 @@ export function TaskModal({ isOpen, onClose, onSubmit }: TaskModalProps) {
                       value={content}
                       onChange={(e) => setContent(e.target.value)}
                       placeholder="What needs to be done?"
-                      className="w-full rounded-lg border-gray-300 text-lg focus:border-blue-500 focus:ring-blue-500"
+                      className="w-full rounded-lg border border-gray-200 bg-gray-50/50 px-3 py-2 text-base placeholder:text-gray-400 focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-blue-500"
                       autoFocus
                     />
                   </div>
 
-                  {/* Quick Options */}
-                  <div className="flex flex-wrap gap-3">
+                  <div className="grid grid-cols-2 gap-3">
                     {/* Due Date */}
-                    <div className="flex-1">
-                      <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
-                        <Calendar className="h-4 w-4" />
+                    <div>
+                      <label className="mb-1.5 flex items-center gap-2 text-xs font-medium text-gray-500">
+                        <Calendar className="h-3.5 w-3.5" />
                         Due Date
                       </label>
                       <input
                         type="datetime-local"
                         value={dueDate}
                         onChange={(e) => setDueDate(e.target.value)}
-                        className="mt-1 w-full rounded-lg border-gray-300 text-sm focus:border-blue-500 focus:ring-blue-500"
+                        className="w-full rounded-lg border border-gray-200 bg-gray-50/50 px-3 py-1.5 text-sm focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-blue-500"
                       />
                     </div>
 
                     {/* Category */}
-                    <div className="flex-1">
-                      <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
-                        <Tag className="h-4 w-4" />
+                    <div>
+                      <label className="mb-1.5 flex items-center gap-2 text-xs font-medium text-gray-500">
+                        <Tag className="h-3.5 w-3.5" />
                         Category
                       </label>
                       <select
                         value={category}
                         onChange={(e) => setCategory(e.target.value as Category)}
-                        className="mt-1 w-full rounded-lg border-gray-300 text-sm focus:border-blue-500 focus:ring-blue-500"
+                        className="w-full rounded-lg border border-gray-200 bg-gray-50/50 px-3 py-1.5 text-sm focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-blue-500"
                       >
                         <option value="personal">Personal</option>
                         <option value="work">Work</option>
@@ -135,15 +134,15 @@ export function TaskModal({ isOpen, onClose, onSubmit }: TaskModalProps) {
                     </div>
 
                     {/* Priority */}
-                    <div className="flex-1">
-                      <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
-                        <AlertCircle className="h-4 w-4" />
+                    <div>
+                      <label className="mb-1.5 flex items-center gap-2 text-xs font-medium text-gray-500">
+                        <AlertCircle className="h-3.5 w-3.5" />
                         Priority
                       </label>
                       <select
                         value={priority}
                         onChange={(e) => setPriority(e.target.value as Priority)}
-                        className="mt-1 w-full rounded-lg border-gray-300 text-sm focus:border-blue-500 focus:ring-blue-500"
+                        className="w-full rounded-lg border border-gray-200 bg-gray-50/50 px-3 py-1.5 text-sm focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-blue-500"
                       >
                         <option value="low">Low</option>
                         <option value="medium">Medium</option>
@@ -154,33 +153,32 @@ export function TaskModal({ isOpen, onClose, onSubmit }: TaskModalProps) {
 
                   {/* Notes */}
                   <div>
-                    <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
-                      <AlignLeft className="h-4 w-4" />
-                      Notes
+                    <label className="mb-1.5 block text-xs font-medium text-gray-500">
+                      Notes (optional)
                     </label>
                     <textarea
                       value={notes}
                       onChange={(e) => setNotes(e.target.value)}
-                      placeholder="Add any additional notes..."
+                      placeholder="Add any additional details..."
                       rows={3}
-                      className="mt-1 w-full rounded-lg border-gray-300 text-sm focus:border-blue-500 focus:ring-blue-500"
+                      className="w-full rounded-lg border border-gray-200 bg-gray-50/50 px-3 py-2 text-sm placeholder:text-gray-400 focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-blue-500"
                     />
                   </div>
                 </div>
 
                 {/* Actions */}
-                <div className="mt-6 flex items-center justify-end gap-3">
+                <div className="mt-6 flex items-center justify-end gap-2">
                   <button
                     type="button"
                     onClick={handleClose}
-                    className="rounded-lg px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"
+                    className="rounded-lg px-3 py-1.5 text-sm font-medium text-gray-600 hover:bg-gray-50 active:bg-gray-100"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
                     disabled={!content.trim()}
-                    className="rounded-lg bg-blue-500 px-4 py-2 text-sm font-medium text-white hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50"
+                    className="rounded-lg bg-blue-500 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-600 active:bg-blue-700 disabled:opacity-50"
                   >
                     Create Task
                   </button>
