@@ -54,14 +54,14 @@ export function TaskModal({ isOpen, onClose, onSubmit }: TaskModalProps) {
   return (
     <AnimatePresence>
       {isOpen && (
-        <>
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
           {/* Backdrop */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 0.5 }}
             exit={{ opacity: 0 }}
             onClick={handleClose}
-            className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm"
+            className="absolute inset-0 bg-black/40 backdrop-blur-sm"
           />
 
           {/* Modal */}
@@ -70,7 +70,7 @@ export function TaskModal({ isOpen, onClose, onSubmit }: TaskModalProps) {
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
             transition={{ type: "spring", damping: 20, stiffness: 300 }}
-            className="fixed left-1/2 top-1/2 z-50 w-[480px] -translate-x-1/2 -translate-y-1/2 transform"
+            className="relative w-[480px] mx-auto"
           >
             <div className="overflow-hidden rounded-xl bg-white shadow-xl ring-1 ring-black/5">
               {/* Header */}
@@ -186,7 +186,7 @@ export function TaskModal({ isOpen, onClose, onSubmit }: TaskModalProps) {
               </form>
             </div>
           </motion.div>
-        </>
+        </div>
       )}
     </AnimatePresence>
   );
