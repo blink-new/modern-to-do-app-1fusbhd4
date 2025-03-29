@@ -4,27 +4,30 @@ import { motion, AnimatePresence } from "framer-motion";
 import { 
   CheckSquare, 
   Calendar, 
-  Settings, 
+  Settings,
   Menu,
   X,
   Bell,
   Search,
-  Plus
+  LayoutDashboard,
+  LogOut
 } from "lucide-react";
 import { cn } from "../../lib/utils";
 
 interface LayoutProps {
   children: React.ReactNode;
+  view: 'tasks' | 'dashboard' | 'settings';
+  onViewChange: (view: 'tasks' | 'dashboard' | 'settings') => void;
 }
 
-export function Layout({ children }: LayoutProps) {
+export function Layout({ children, view, onViewChange }: LayoutProps) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
 
   const navItems = [
-    { icon: CheckSquare, label: "Tasks", active: true },
-    { icon: Calendar, label: "Calendar", active: false },
-    { icon: Settings, label: "Settings", active: false },
+    { icon: CheckSquare, label: "Tasks", value: 'tasks', active: view === 'tasks' },
+    { icon: LayoutDashboard, label: "Dashboard", value: 'dashboard', active: view === 'dashboard' },
+    { icon: Settings, label: "Settings", value: 'settings', active: view === 'settings' },
   ];
 
   return (
@@ -50,6 +53,7 @@ export function Layout({ children }: LayoutProps) {
           {navItems.map((item) => (
             <button
               key={item.label}
+              onClick={() => onViewChange(item.value as any)}
               className={cn(
                 "mb-1 flex w-full items-center rounded-lg px-3 py-2 text-sm font-medium transition-colors",
                 item.active
@@ -64,12 +68,10 @@ export function Layout({ children }: LayoutProps) {
         </nav>
 
         <div className="absolute bottom-4 left-0 right-0 px-4">
-          <div className="rounded-lg bg-blue-50 p-4">
-            <p className="text-sm font-medium text-blue-900">Pro Tips</p>
-            <p className="mt-1 text-xs text-blue-700">
-              Use keyboard shortcuts to be more productive. Press '?' to view all shortcuts.
-            </p>
-          </div>
+          <button className="flex w-full items-center rounded-lg px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100">
+            <LogOut className="mr-3 h-5 w-5" />
+            Sign Out
+          </button>
         </div>
       </aside>
 
@@ -109,7 +111,7 @@ export function Layout({ children }: LayoutProps) {
                 <Bell className="h-6 w-6 text-gray-500" />
                 <span className="absolute right-1 top-1 h-2 w-2 rounded-full bg-blue-500" />
               </button>
-              <button className="h-8 w-8 overflow-hidden rounded-full bg-gradient-to-r from-blue-500 to-blue-600">
+              <button className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-full bg-gradient-to-r from-blue-500 to-blue-600">
                 <span className="text-sm font-medium text-white">JD</span>
               </button>
             </div>
@@ -117,7 +119,19 @@ export function Layout({ children }: LayoutProps) {
         </header>
 
         {/* Page content */}
-        <main className="mx-auto max-w-5xl p-6">{children}</main>
+        <main className="mx-auto max-w-5xl p-6">
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={view}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.2 }}
+            >
+              {children}
+            </motion.div>
+          </AnimatePresence>
+        </main>
       </div>
     </div>
   );
