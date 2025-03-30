@@ -11,6 +11,7 @@ import {
   DragEndEvent,
   DragStartEvent,
   useDroppable,
+  DragOverEvent,
 } from '@dnd-kit/core';
 import {
   SortableContext,
@@ -37,6 +38,14 @@ const categoryColors = {
   other: 'bg-gray-50 border-gray-200',
 };
 
+const categoryActiveColors = {
+  personal: 'bg-purple-100 border-purple-300',
+  work: 'bg-blue-100 border-blue-300',
+  shopping: 'bg-green-100 border-green-300',
+  health: 'bg-red-100 border-red-300',
+  other: 'bg-gray-100 border-gray-300',
+};
+
 const categoryIcons = {
   personal: '👤',
   work: '💼',
@@ -45,15 +54,25 @@ const categoryIcons = {
   other: '📌',
 };
 
-function DroppableColumn({ category, tasks }: { category: Category; tasks: Task[] }) {
-  const { setNodeRef } = useDroppable({
+function DroppableColumn({ 
+  category, 
+  tasks, 
+  isOverlay 
+}: { 
+  category: Category; 
+  tasks: Task[]; 
+  isOverlay?: boolean;
+}) {
+  const { setNodeRef, isOver } = useDroppable({
     id: category,
   });
+
+  const bgColor = isOver ? categoryActiveColors[category] : categoryColors[category];
 
   return (
     <div
       ref={setNodeRef}
-      className={`rounded-xl border p-4 ${categoryColors[category]}`}
+      className={`rounded-xl border p-4 transition-colors duration-200 ${bgColor}`}
     >
       <div className="mb-4 flex items-center justify-between">
         <div className="flex items-center gap-2">
@@ -91,7 +110,7 @@ function DroppableColumn({ category, tasks }: { category: Category; tasks: Task[
         </SortableContext>
 
         {tasks.length === 0 && (
-          <div className="rounded-lg border border-dashed border-gray-200 p-4">
+          <div className={`rounded-lg border border-dashed border-gray-200 p-4 transition-colors duration-200 ${isOver ? 'bg-gray-50' : ''}`}>
             <p className="text-center text-sm text-gray-500">
               Drop tasks here
             </p>
@@ -104,6 +123,7 @@ function DroppableColumn({ category, tasks }: { category: Category; tasks: Task[
 
 export function BoardView({ tasks }: BoardViewProps) {
   const [activeId, setActiveId] = useState<string | null>(null);
+  const [activeCategory, setActiveCategory] = useState<Category | null>(null);
   const { updateTask } = useTaskStore();
 
   const sensors = useSensors(
@@ -119,11 +139,16 @@ export function BoardView({ tasks }: BoardViewProps) {
 
   const handleDragStart = (event: DragStartEvent) => {
     setActiveId(event.active.id as string);
+    const task = tasks.find(t => t.id === event.active.id);
+    if (task) {
+      setActiveCategory(task.category);
+    }
   };
 
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
     setActiveId(null);
+    setActiveCategory(null);
 
     if (!over) return;
 
@@ -140,6 +165,7 @@ export function BoardView({ tasks }: BoardViewProps) {
 
   const handleDragCancel = () => {
     setActiveId(null);
+    setActiveCategory(null);
   };
 
   const activeTask = activeId ? tasks.find(task => task.id === activeId) : null;
@@ -162,9 +188,15 @@ export function BoardView({ tasks }: BoardViewProps) {
         ))}
       </div>
 
-      <DragOverlay adjustScale style={{ transformOrigin: '0 0' }}>
+      <DragOverlay>
         {activeTask && (
-          <div className="rounded-lg border bg-white p-4 shadow-lg">
+          <div 
+            className="rounded-lg border bg-white p-4 shadow-lg opacity-90 cursor-grabbing"
+            style={{ 
+              transform: 'rotate(-3deg)',
+              width: '100%'
+            }}
+          >
             <TaskItem task={activeTask} compact />
           </div>
         )}
