@@ -1,156 +1,77 @@
 
+import { DndContext, DragOverlay, closestCorners } from '@dnd-kit/core';
+import { SortableContext, arrayMove } from '@dnd-kit/sortable';
 import { useState } from 'react';
-import {
-  DndContext,
-  DragOverlay,
-  closestCorners,
-  KeyboardSensor,
-  PointerSensor,
-  useSensor,
-  useSensors,
-  DragEndEvent,
-  DragStartEvent,
-} from '@dnd-kit/core';
-import {
-  SortableContext,
-  arrayMove,
-  sortableKeyboardCoordinates,
-  verticalListSortingStrategy,
-} from '@dnd-kit/sortable';
-import { Category, Task } from '../lib/types';
-import { TaskItem } from './TaskItem';
 import { useTaskStore } from '../stores/taskStore';
-import { motion, AnimatePresence } from 'framer-motion';
+import { TaskColumn } from './TaskColumn';
+import { TaskItem } from './TaskItem';
+import type { Task } from '../lib/types';
 
-interface BoardViewProps {
-  tasks: Task[];
-}
-
-const categories: Category[] = ['personal', 'work', 'shopping', 'health', 'other'];
-
-const categoryColors = {
-  personal: 'bg-purple-50 border-purple-200',
-  work: 'bg-blue-50 border-blue-200',
-  shopping: 'bg-green-50 border-green-200',
-  health: 'bg-red-50 border-red-200',
-  other: 'bg-gray-50 border-gray-200',
-};
-
-const categoryIcons = {
-  personal: '👤',
-  work: '💼',
-  shopping: '🛒',
-  health: '❤️',
-  other: '📌',
-};
-
-export function BoardView({ tasks }: BoardViewProps) {
+export function BoardView() {
+  const { tasks, setTasks } = useTaskStore();
   const [activeId, setActiveId] = useState<string | null>(null);
-  const { updateTask } = useTaskStore();
 
-  const sensors = useSensors(
-    useSensor(PointerSensor),
-    useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates,
-    })
-  );
+  const todoTasks = tasks.filter(task => !task.completed);
+  const completedTasks = tasks.filter(task => task.completed);
 
-  const handleDragStart = (event: DragStartEvent) => {
-    setActiveId(event.active.id as string);
+  const handleDragStart = (event: { active: { id: string } }) => {
+    setActiveId(event.active.id);
   };
 
-  const handleDragEnd = (event: DragEndEvent) => {
+  const handleDragEnd = (event: { active: { id: string }; over: { id: string } | null }) => {
     const { active, over } = event;
-    setActiveId(null);
 
-    if (!over) return;
-
-    const activeTask = tasks.find(t => t.id === active.id);
-    const overCategory = over.id as Category;
-
-    if (activeTask && activeTask.category !== overCategory) {
-      updateTask({
-        ...activeTask,
-        category: overCategory,
-      });
+    if (!over) {
+      setActiveId(null);
+      return;
     }
+
+    if (active.id !== over.id) {
+      const oldIndex = tasks.findIndex(task => task.id === active.id);
+      const newIndex = tasks.findIndex(task => task.id === over.id);
+
+      const newTasks = arrayMove(tasks, oldIndex, newIndex);
+      setTasks(newTasks);
+    }
+
+    setActiveId(null);
   };
 
-  const activeTask = activeId ? tasks.find(task => task.id === activeId) : null;
+  const handleDragCancel = () => {
+    setActiveId(null);
+  };
+
+  const activeTask = tasks.find(task => task.id === activeId);
 
   return (
     <DndContext
-      sensors={sensors}
       collisionDetection={closestCorners}
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
+      onDragCancel={handleDragCancel}
     >
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-5">
-        {categories.map(category => {
-          const categoryTasks = tasks.filter(task => task.category === category);
-          
-          return (
-            <div
-              key={category}
-              className={`rounded-xl border p-4 ${categoryColors[category]}`}
-            >
-              <div className="mb-4 flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <span className="text-xl">{categoryIcons[category]}</span>
-                  <h3 className="text-sm font-medium capitalize text-gray-900">
-                    {category}
-                  </h3>
-                </div>
-                <span className="rounded-full bg-white px-2 py-1 text-xs font-medium text-gray-600">
-                  {categoryTasks.length}
-                </span>
-              </div>
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <SortableContext items={todoTasks.map(t => t.id)}>
+          <TaskColumn
+            title="To Do"
+            tasks={todoTasks}
+            status="todo"
+          />
+        </SortableContext>
 
-              <div
-                className="space-y-2"
-                id={category}
-              >
-                <SortableContext
-                  items={categoryTasks.map(t => t.id)}
-                  strategy={verticalListSortingStrategy}
-                >
-                  <AnimatePresence>
-                    {categoryTasks.map(task => (
-                      <motion.div
-                        key={task.id}
-                        layout
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -20 }}
-                      >
-                        <TaskItem
-                          task={task}
-                          compact
-                        />
-                      </motion.div>
-                    ))}
-                  </AnimatePresence>
-                </SortableContext>
-
-                {categoryTasks.length === 0 && (
-                  <div className="rounded-lg border border-dashed border-gray-200 p-4">
-                    <p className="text-center text-sm text-gray-500">
-                      Drop tasks here
-                    </p>
-                  </div>
-                )}
-              </div>
-            </div>
-          );
-        })}
+        <SortableContext items={completedTasks.map(t => t.id)}>
+          <TaskColumn
+            title="Completed"
+            tasks={completedTasks}
+            status="completed"
+          />
+        </SortableContext>
       </div>
 
       <DragOverlay>
-        {activeTask && (
-          <div className="rounded-lg border bg-white p-4 shadow-lg">
-            <TaskItem task={activeTask} compact />
-          </div>
-        )}
+        {activeId && activeTask ? (
+          <TaskItem task={activeTask} compact />
+        ) : null}
       </DragOverlay>
     </DndContext>
   );
