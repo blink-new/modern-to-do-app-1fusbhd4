@@ -10,6 +10,7 @@ import {
   useSensors,
   DragEndEvent,
   DragStartEvent,
+  useDroppable,
 } from '@dnd-kit/core';
 import {
   SortableContext,
@@ -44,12 +45,73 @@ const categoryIcons = {
   other: '📌',
 };
 
+function DroppableColumn({ category, tasks }: { category: Category; tasks: Task[] }) {
+  const { setNodeRef } = useDroppable({
+    id: category,
+  });
+
+  return (
+    <div
+      ref={setNodeRef}
+      className={`rounded-xl border p-4 ${categoryColors[category]}`}
+    >
+      <div className="mb-4 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <span className="text-xl">{categoryIcons[category]}</span>
+          <h3 className="text-sm font-medium capitalize text-gray-900">
+            {category}
+          </h3>
+        </div>
+        <span className="rounded-full bg-white px-2 py-1 text-xs font-medium text-gray-600">
+          {tasks.length}
+        </span>
+      </div>
+
+      <div className="space-y-2">
+        <SortableContext
+          items={tasks.map(t => t.id)}
+          strategy={verticalListSortingStrategy}
+        >
+          <AnimatePresence>
+            {tasks.map(task => (
+              <motion.div
+                key={task.id}
+                layout
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+              >
+                <TaskItem
+                  task={task}
+                  compact
+                />
+              </motion.div>
+            ))}
+          </AnimatePresence>
+        </SortableContext>
+
+        {tasks.length === 0 && (
+          <div className="rounded-lg border border-dashed border-gray-200 p-4">
+            <p className="text-center text-sm text-gray-500">
+              Drop tasks here
+            </p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export function BoardView({ tasks }: BoardViewProps) {
   const [activeId, setActiveId] = useState<string | null>(null);
   const { updateTask } = useTaskStore();
 
   const sensors = useSensors(
-    useSensor(PointerSensor),
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 5,
+      },
+    }),
     useSensor(KeyboardSensor, {
       coordinateGetter: sortableKeyboardCoordinates,
     })
@@ -76,6 +138,10 @@ export function BoardView({ tasks }: BoardViewProps) {
     }
   };
 
+  const handleDragCancel = () => {
+    setActiveId(null);
+  };
+
   const activeTask = activeId ? tasks.find(task => task.id === activeId) : null;
 
   return (
@@ -84,68 +150,19 @@ export function BoardView({ tasks }: BoardViewProps) {
       collisionDetection={closestCorners}
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
+      onDragCancel={handleDragCancel}
     >
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-5">
-        {categories.map(category => {
-          const categoryTasks = tasks.filter(task => task.category === category);
-          
-          return (
-            <div
-              key={category}
-              className={`rounded-xl border p-4 ${categoryColors[category]}`}
-            >
-              <div className="mb-4 flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <span className="text-xl">{categoryIcons[category]}</span>
-                  <h3 className="text-sm font-medium capitalize text-gray-900">
-                    {category}
-                  </h3>
-                </div>
-                <span className="rounded-full bg-white px-2 py-1 text-xs font-medium text-gray-600">
-                  {categoryTasks.length}
-                </span>
-              </div>
-
-              <div
-                className="space-y-2"
-                id={category}
-              >
-                <SortableContext
-                  items={categoryTasks.map(t => t.id)}
-                  strategy={verticalListSortingStrategy}
-                >
-                  <AnimatePresence>
-                    {categoryTasks.map(task => (
-                      <motion.div
-                        key={task.id}
-                        layout
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -20 }}
-                      >
-                        <TaskItem
-                          task={task}
-                          compact
-                        />
-                      </motion.div>
-                    ))}
-                  </AnimatePresence>
-                </SortableContext>
-
-                {categoryTasks.length === 0 && (
-                  <div className="rounded-lg border border-dashed border-gray-200 p-4">
-                    <p className="text-center text-sm text-gray-500">
-                      Drop tasks here
-                    </p>
-                  </div>
-                )}
-              </div>
-            </div>
-          );
-        })}
+        {categories.map(category => (
+          <DroppableColumn
+            key={category}
+            category={category}
+            tasks={tasks.filter(task => task.category === category)}
+          />
+        ))}
       </div>
 
-      <DragOverlay>
+      <DragOverlay adjustScale style={{ transformOrigin: '0 0' }}>
         {activeTask && (
           <div className="rounded-lg border bg-white p-4 shadow-lg">
             <TaskItem task={activeTask} compact />
