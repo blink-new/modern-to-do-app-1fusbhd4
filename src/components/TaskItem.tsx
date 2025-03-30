@@ -1,9 +1,15 @@
 
-import { useSortable } from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
-import { Checkbox } from './ui/checkbox';
-import type { Task } from '../lib/types';
-import { useTaskStore } from '../stores/taskStore';
+import { useSortable } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
+import { Checkbox } from "./ui/checkbox";
+import { useTaskStore } from "../stores/taskStore";
+
+interface Task {
+  id: string;
+  title: string;
+  description?: string;
+  completed: boolean;
+}
 
 interface TaskItemProps {
   task: Task;
@@ -23,7 +29,7 @@ export function TaskItem({ task, compact = false }: TaskItemProps) {
   } = useSortable({
     id: task.id,
     data: {
-      type: 'Task',
+      type: "Task",
       task
     }
   });
@@ -40,7 +46,7 @@ export function TaskItem({ task, compact = false }: TaskItemProps) {
       {...attributes}
       {...listeners}
       className={`group relative flex cursor-grab items-center gap-3 rounded-lg border bg-white p-3 shadow-sm transition-all hover:border-gray-300 active:cursor-grabbing ${
-        isDragging ? 'opacity-50 ring-2 ring-primary ring-offset-2' : ''
+        isDragging ? "opacity-50 ring-2 ring-primary ring-offset-2" : ""
       }`}
     >
       <div onClick={(e) => e.stopPropagation()}>
@@ -52,7 +58,7 @@ export function TaskItem({ task, compact = false }: TaskItemProps) {
       </div>
       
       <div className="flex-1 truncate">
-        <p className={`truncate text-sm ${task.completed ? 'text-gray-500 line-through' : ''}`}>
+        <p className={`truncate text-sm ${task.completed ? "text-gray-500 line-through" : ""}`}>
           {task.title}
         </p>
         {!compact && task.description && (
