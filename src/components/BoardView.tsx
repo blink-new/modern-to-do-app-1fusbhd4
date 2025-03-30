@@ -1,5 +1,5 @@
 
-import { DndContext, DragOverlay, closestCorners } from '@dnd-kit/core';
+import { DndContext, DragOverlay, closestCorners, DragEndEvent, DragStartEvent } from '@dnd-kit/core';
 import { SortableContext, arrayMove } from '@dnd-kit/sortable';
 import { useState } from 'react';
 import { useTaskStore } from '../stores/taskStore';
@@ -14,11 +14,11 @@ export function BoardView() {
   const todoTasks = tasks.filter(task => !task.completed);
   const completedTasks = tasks.filter(task => task.completed);
 
-  const handleDragStart = (event: { active: { id: string } }) => {
-    setActiveId(event.active.id);
+  const handleDragStart = (event: DragStartEvent) => {
+    setActiveId(event.active.id as string);
   };
 
-  const handleDragEnd = (event: { active: { id: string }; over: { id: string } | null }) => {
+  const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
 
     if (!over) {
@@ -26,23 +26,27 @@ export function BoardView() {
       return;
     }
 
-    // Handle dropping into columns
-    if (over.id === 'todo' || over.id === 'completed') {
-      const task = tasks.find(t => t.id === active.id);
-      if (task) {
-        updateTask(task.id, { completed: over.id === 'completed' });
-      }
+    const activeTask = tasks.find(t => t.id === active.id);
+    if (!activeTask) {
       setActiveId(null);
       return;
     }
 
-    // Handle reordering within columns
-    if (active.id !== over.id) {
-      const oldIndex = tasks.findIndex(task => task.id === active.id);
-      const newIndex = tasks.findIndex(task => task.id === over.id);
-
-      const newTasks = arrayMove(tasks, oldIndex, newIndex);
-      setTasks(newTasks);
+    // Handle dropping into columns
+    if (over.id === 'completed' || over.id === 'todo') {
+      const newCompleted = over.id === 'completed';
+      if (activeTask.completed !== newCompleted) {
+        updateTask(activeTask.id, { completed: newCompleted });
+      }
+    } else {
+      // Handle reordering within columns
+      const oldIndex = tasks.findIndex(t => t.id === active.id);
+      const newIndex = tasks.findIndex(t => t.id === over.id);
+      
+      if (oldIndex !== -1 && newIndex !== -1) {
+        const newTasks = arrayMove(tasks, oldIndex, newIndex);
+        setTasks(newTasks);
+      }
     }
 
     setActiveId(null);
@@ -62,21 +66,18 @@ export function BoardView() {
       onDragCancel={handleDragCancel}
     >
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <SortableContext items={todoTasks.map(t => t.id)}>
-          <TaskColumn
-            title="To Do"
-            tasks={todoTasks}
-            status="todo"
-          />
-        </SortableContext>
-
-        <SortableContext items={completedTasks.map(t => t.id)}>
-          <TaskColumn
-            title="Completed"
-            tasks={completedTasks}
-            status="completed"
-          />
-        </SortableContext>
+        <TaskColumn
+          id="todo"
+          title="To Do"
+          tasks={todoTasks}
+          status="todo"
+        />
+        <TaskColumn
+          id="completed"
+          title="Completed"
+          tasks={completedTasks}
+          status="completed"
+        />
       </div>
 
       <DragOverlay>

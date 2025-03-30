@@ -1,25 +1,27 @@
 
 import { useDroppable } from '@dnd-kit/core';
-import { SortableContext } from '@dnd-kit/sortable';
+import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import type { Task } from '../lib/types';
 import { TaskItem } from './TaskItem';
-import { useTaskStore } from '../stores/taskStore';
 
 interface TaskColumnProps {
+  id: string;
   title: string;
   tasks: Task[];
   status: 'todo' | 'completed';
 }
 
-export function TaskColumn({ title, tasks, status }: TaskColumnProps) {
-  const { setNodeRef } = useDroppable({
+export function TaskColumn({ id, title, tasks, status }: TaskColumnProps) {
+  const { setNodeRef, isOver } = useDroppable({
     id: status,
   });
 
   return (
     <div
       ref={setNodeRef}
-      className="flex h-full flex-col rounded-xl border bg-gray-50/50 p-4"
+      className={`flex h-full flex-col rounded-xl border bg-gray-50/50 p-4 transition-colors ${
+        isOver ? 'bg-gray-100/80 ring-2 ring-primary ring-offset-2' : ''
+      }`}
     >
       <div className="mb-4 flex items-center justify-between">
         <h2 className="text-lg font-semibold">{title}</h2>
@@ -28,21 +30,25 @@ export function TaskColumn({ title, tasks, status }: TaskColumnProps) {
         </span>
       </div>
 
-      <div className="flex flex-1 flex-col gap-2">
-        {tasks.map((task) => (
-          <TaskItem
-            key={task.id}
-            task={task}
-            compact
-          />
-        ))}
-        
-        {tasks.length === 0 && (
-          <div className="flex flex-1 items-center justify-center rounded-lg border-2 border-dashed border-gray-200 p-4 text-center text-sm text-gray-400">
-            Drop tasks here
-          </div>
-        )}
-      </div>
+      <SortableContext items={tasks.map(t => t.id)} strategy={verticalListSortingStrategy}>
+        <div className="flex flex-1 flex-col gap-2">
+          {tasks.map((task) => (
+            <TaskItem
+              key={task.id}
+              task={task}
+              compact
+            />
+          ))}
+          
+          {tasks.length === 0 && (
+            <div className={`flex flex-1 items-center justify-center rounded-lg border-2 border-dashed border-gray-200 p-4 text-center text-sm ${
+              isOver ? 'border-primary bg-primary/5' : 'border-gray-200'
+            }`}>
+              Drop tasks here
+            </div>
+          )}
+        </div>
+      </SortableContext>
     </div>
   );
 }
