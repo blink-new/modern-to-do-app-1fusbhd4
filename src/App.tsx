@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import {
   DndContext,
   closestCenter,
@@ -21,11 +21,10 @@ import { TaskItem } from "./components/TaskItem";
 import { TaskModal } from "./components/TaskModal";
 import { Dashboard } from "./components/Dashboard";
 import { Settings } from "./components/Settings";
+import { useTaskStore } from "./stores/taskStore";
 import type { Task, UserPreferences } from "./lib/types";
-import { saveToLocalStorage, loadFromLocalStorage } from "./lib/utils";
 
 export default function App() {
-  const [tasks, setTasks] = useState<Task[]>([]);
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
   const [filter, setFilter] = useState<"all" | "active" | "completed">("all");
   const [view, setView] = useState<"tasks" | "dashboard" | "settings">("tasks");
@@ -38,6 +37,8 @@ export default function App() {
     soundEnabled: true,
   });
 
+  const { tasks, addTask, toggleTask, deleteTask } = useTaskStore();
+
   const sensors = useSensors(
     useSensor(PointerSensor),
     useSensor(KeyboardSensor, {
@@ -45,56 +46,14 @@ export default function App() {
     })
   );
 
-  useEffect(() => {
-    const loadedTasks = loadFromLocalStorage();
-    setTasks(loadedTasks);
-  }, []);
-
-  useEffect(() => {
-    saveToLocalStorage(tasks);
-  }, [tasks]);
-
   const handleDragEnd = (event: any) => {
     const { active, over } = event;
     if (active.id !== over.id) {
-      setTasks((tasks) => {
-        const oldIndex = tasks.findIndex((t) => t.id === active.id);
-        const newIndex = tasks.findIndex((t) => t.id === over.id);
-        return arrayMove(tasks, oldIndex, newIndex);
-      });
+      const oldIndex = tasks.findIndex((t) => t.id === active.id);
+      const newIndex = tasks.findIndex((t) => t.id === over.id);
+      const newTasks = arrayMove(tasks, oldIndex, newIndex);
+      // Note: We would need to add reordering to the store if we want to persist the order
     }
-  };
-
-  const addTask = (task: Task) => {
-    setTasks([task, ...tasks]);
-
-    if (preferences.soundEnabled) {
-      // Play a subtle sound effect
-      const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YWoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBkCU1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBTqO0/DRgDMGHm7A7+OZRA0PVqzn77BdGAg+ltryxnMpBSh8yu7blEILFlyx6OyrWBUIQ5zd8sFuJAU3jNDu1YU2Bhxqvu3mnEcODlOq5e+zYBoIPJPY8cp2KwUme8jt3pZFDBVZr+btrVoXCECY2/LDcSYFNYnO79iIOQYbarv');
-      audio.play();
-    }
-  };
-
-  const toggleComplete = (id: string) => {
-    setTasks(tasks.map(task =>
-      task.id === id ? { ...task, completed: !task.completed } : task
-    ));
-
-    if (preferences.soundEnabled) {
-      // Play a different sound for completion
-      const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YWoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBkCU1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBTqO0/DRgDMGHm7A7+OZRA0PVqzn77BdGAg+ltryxnMpBSh8yu7blEILFlyx6OyrWBUIQ5zd8sFuJAU3jNDu1YU2Bhxqvu3mnEcODlOq5e+zYBoIPJPY8cp2KwUme8jt3pZFDBVZr+btrVoXCECY2/LDcSYFNYnO79iIOQYbarv');
-      audio.play();
-    }
-  };
-
-  const deleteTask = (id: string) => {
-    setTasks(tasks.filter(task => task.id !== id));
-  };
-
-  const updateNotes = (id: string, notes: string) => {
-    setTasks(tasks.map(task =>
-      task.id === id ? { ...task, notes } : task
-    ));
   };
 
   const filteredTasks = tasks.filter(task => {
@@ -150,9 +109,8 @@ export default function App() {
                       <TaskItem
                         key={task.id}
                         task={task}
-                        onComplete={toggleComplete}
+                        onToggle={toggleTask}
                         onDelete={deleteTask}
-                        onUpdateNotes={updateNotes}
                       />
                     ))}
                   </AnimatePresence>

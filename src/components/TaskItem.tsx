@@ -1,7 +1,7 @@
 
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Calendar, Tag } from 'lucide-react';
+import { Calendar, Tag, Trash2 } from 'lucide-react';
 import type { Task } from '../lib/types';
 import { useProjectStore } from '../stores/projectStore';
 
@@ -60,7 +60,7 @@ export function TaskItem({ task, onToggle, onDelete }: TaskItemProps) {
                 task.completed ? 'text-gray-400 line-through' : 'text-gray-900'
               }`}
             >
-              {task.content}
+              {task.title}
             </p>
             {project && (
               <div
@@ -75,18 +75,22 @@ export function TaskItem({ task, onToggle, onDelete }: TaskItemProps) {
             )}
           </div>
 
-          <div className="mt-1 flex items-center gap-3 text-xs text-gray-500">
-            {task.dueDate && (
-              <div className="flex items-center gap-1">
-                <Calendar className="h-3 w-3" />
-                {new Date(task.dueDate).toLocaleDateString()}
-              </div>
-            )}
-            <div className="flex items-center gap-1">
-              <Tag className="h-3 w-3" />
-              {task.category}
+          {(task.dueDate || task.category) && (
+            <div className="mt-1 flex items-center gap-3 text-xs text-gray-500">
+              {task.dueDate && (
+                <div className="flex items-center gap-1">
+                  <Calendar className="h-3 w-3" />
+                  {new Date(task.dueDate).toLocaleDateString()}
+                </div>
+              )}
+              {task.category && (
+                <div className="flex items-center gap-1">
+                  <Tag className="h-3 w-3" />
+                  {task.category}
+                </div>
+              )}
             </div>
-          </div>
+          )}
         </div>
 
         <motion.button
@@ -95,19 +99,7 @@ export function TaskItem({ task, onToggle, onDelete }: TaskItemProps) {
           onClick={() => onDelete(task.id)}
           className="shrink-0 rounded-md p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
         >
-          <svg
-            className="h-4 w-4"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-            />
-          </svg>
+          <Trash2 className="h-4 w-4" />
         </motion.button>
       </div>
     </motion.div>
