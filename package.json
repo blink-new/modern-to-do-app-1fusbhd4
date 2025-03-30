@@ -47,7 +47,10 @@
     "zod": "^3.24.2",
     "@dnd-kit/sortable": "latest",
     "class-variance-authority": "latest",
-    "tailwind-merge": "latest"
+    "tailwind-merge": "latest",
+    "@headlessui/react": "latest",
+    "@dnd-kit/utilities": "latest",
+    "zustand": "latest"
   },
   "devDependencies": {
     "@eslint/js": "^9.21.0",

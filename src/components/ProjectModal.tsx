@@ -1,14 +1,8 @@
 
-import { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { X } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Dialog } from '@headlessui/react';
 import { useProjectStore } from '../stores/projectStore';
 import type { Project } from '../lib/types';
-
-const COLORS = [
-  '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEEAD',
-  '#D4A5A5', '#9B59B6', '#3498DB', '#E67E22', '#1ABC9C'
-];
 
 interface ProjectModalProps {
   isOpen: boolean;
@@ -16,135 +10,126 @@ interface ProjectModalProps {
   editingProject?: Project;
 }
 
+const COLORS = [
+  '#ef4444', // red
+  '#f97316', // orange
+  '#f59e0b', // amber
+  '#84cc16', // lime
+  '#22c55e', // green
+  '#06b6d4', // cyan
+  '#3b82f6', // blue
+  '#6366f1', // indigo
+  '#a855f7', // purple
+  '#ec4899', // pink
+];
+
 export function ProjectModal({ isOpen, onClose, editingProject }: ProjectModalProps) {
-  const [name, setName] = useState(editingProject?.name || '');
-  const [description, setDescription] = useState(editingProject?.description || '');
-  const [color, setColor] = useState(editingProject?.color || COLORS[0]);
-  
-  const { addProject, updateProject } = useProjectStore();
+  const [name, setName] = useState('');
+  const [color, setColor] = useState(COLORS[0]);
+  const { addProject, updateProject, projects } = useProjectStore();
+
+  useEffect(() => {
+    if (editingProject) {
+      setName(editingProject.name);
+      setColor(editingProject.color);
+    } else {
+      setName('');
+      setColor(COLORS[0]);
+    }
+  }, [editingProject]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    
     if (!name.trim()) return;
 
     if (editingProject) {
-      updateProject(editingProject.id, {
+      updateProject({
+        ...editingProject,
         name: name.trim(),
-        description: description.trim(),
         color,
       });
     } else {
-      addProject(name.trim(), description.trim(), color);
+      addProject({
+        id: crypto.randomUUID(),
+        name: name.trim(),
+        color,
+        order: projects.length,
+      });
     }
-    
-    resetForm();
+
     onClose();
   };
 
-  const resetForm = () => {
-    setName('');
-    setDescription('');
-    setColor(COLORS[0]);
-  };
-
   return (
-    <AnimatePresence>
-      {isOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center">
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 0.5 }}
-            exit={{ opacity: 0 }}
-            onClick={onClose}
-            className="absolute inset-0 bg-black/40 backdrop-blur-sm"
-          />
+    <Dialog
+      open={isOpen}
+      onClose={onClose}
+      className="relative z-50"
+    >
+      <div className="fixed inset-0 bg-black/30" aria-hidden="true" />
+      
+      <div className="fixed inset-0 flex items-center justify-center p-4">
+        <Dialog.Panel className="mx-auto max-w-sm rounded-lg bg-white p-6 shadow-xl">
+          <Dialog.Title className="text-lg font-medium leading-6 text-gray-900">
+            {editingProject ? 'Edit Project' : 'Add Project'}
+          </Dialog.Title>
 
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95, y: 20 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.95, y: 20 }}
-            className="relative w-[400px]"
-          >
-            <div className="overflow-hidden rounded-xl bg-white shadow-xl">
-              <div className="flex items-center justify-between border-b px-4 py-3">
-                <h2 className="text-base font-semibold">
-                  {editingProject ? 'Edit Project' : 'Create New Project'}
-                </h2>
-                <button onClick={onClose} className="rounded-lg p-1 hover:bg-gray-50">
-                  <X className="h-5 w-5 text-gray-400" />
-                </button>
+          <form onSubmit={handleSubmit} className="mt-4">
+            <div className="space-y-4">
+              <div>
+                <label htmlFor="name" className="block text-sm font-medium text-gray-700">
+                  Name
+                </label>
+                <input
+                  type="text"
+                  id="name"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                  placeholder="Project name"
+                  autoFocus
+                />
               </div>
 
-              <form onSubmit={handleSubmit} className="p-4">
-                <div className="space-y-4">
-                  <div>
-                    <label className="mb-1.5 block text-sm font-medium text-gray-700">
-                      Project Name
-                    </label>
-                    <input
-                      type="text"
-                      value={name}
-                      onChange={(e) => setName(e.target.value)}
-                      placeholder="Enter project name"
-                      className="w-full rounded-lg border border-gray-200 px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                      autoFocus
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  Color
+                </label>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {COLORS.map((c) => (
+                    <button
+                      key={c}
+                      type="button"
+                      className={`h-6 w-6 rounded-full ${
+                        c === color ? 'ring-2 ring-offset-2 ring-blue-500' : ''
+                      }`}
+                      style={{ backgroundColor: c }}
+                      onClick={() => setColor(c)}
                     />
-                  </div>
-
-                  <div>
-                    <label className="mb-1.5 block text-sm font-medium text-gray-700">
-                      Description (Optional)
-                    </label>
-                    <textarea
-                      value={description}
-                      onChange={(e) => setDescription(e.target.value)}
-                      placeholder="Add project description"
-                      rows={3}
-                      className="w-full rounded-lg border border-gray-200 px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="mb-1.5 block text-sm font-medium text-gray-700">
-                      Color
-                    </label>
-                    <div className="flex flex-wrap gap-2">
-                      {COLORS.map((c) => (
-                        <button
-                          key={c}
-                          type="button"
-                          onClick={() => setColor(c)}
-                          className={`h-6 w-6 rounded-full transition-transform ${
-                            color === c ? 'ring-2 ring-offset-2 scale-110' : ''
-                          }`}
-                          style={{ backgroundColor: c }}
-                        />
-                      ))}
-                    </div>
-                  </div>
+                  ))}
                 </div>
-
-                <div className="mt-6 flex justify-end gap-2">
-                  <button
-                    type="button"
-                    onClick={onClose}
-                    className="rounded-lg px-3 py-1.5 text-sm font-medium text-gray-600 hover:bg-gray-50"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={!name.trim()}
-                    className="rounded-lg bg-blue-500 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-600 disabled:opacity-50"
-                  >
-                    {editingProject ? 'Save Changes' : 'Create Project'}
-                  </button>
-                </div>
-              </form>
+              </div>
             </div>
-          </motion.div>
-        </div>
-      )}
-    </AnimatePresence>
+
+            <div className="mt-6 flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={onClose}
+                className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+              >
+                {editingProject ? 'Save' : 'Add'}
+              </button>
+            </div>
+          </form>
+        </Dialog.Panel>
+      </div>
+    </Dialog>
   );
 }
