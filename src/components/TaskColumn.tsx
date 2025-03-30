@@ -14,12 +14,16 @@ interface TaskColumnProps {
 export function TaskColumn({ id, title, tasks, status }: TaskColumnProps) {
   const { setNodeRef, isOver } = useDroppable({
     id: status,
+    data: {
+      type: 'Column',
+      status
+    }
   });
 
   return (
     <div
       ref={setNodeRef}
-      className={`flex h-full flex-col rounded-xl border bg-gray-50/50 p-4 transition-colors ${
+      className={`flex h-full min-h-[400px] flex-col rounded-xl border bg-gray-50/50 p-4 transition-colors ${
         isOver ? 'bg-gray-100/80 ring-2 ring-primary ring-offset-2' : ''
       }`}
     >
@@ -41,7 +45,7 @@ export function TaskColumn({ id, title, tasks, status }: TaskColumnProps) {
           ))}
           
           {tasks.length === 0 && (
-            <div className={`flex flex-1 items-center justify-center rounded-lg border-2 border-dashed border-gray-200 p-4 text-center text-sm ${
+            <div className={`flex flex-1 items-center justify-center rounded-lg border-2 border-dashed p-4 text-center text-sm transition-colors ${
               isOver ? 'border-primary bg-primary/5' : 'border-gray-200'
             }`}>
               Drop tasks here

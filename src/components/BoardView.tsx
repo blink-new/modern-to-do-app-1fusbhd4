@@ -1,5 +1,5 @@
 
-import { DndContext, DragOverlay, closestCorners, DragEndEvent, DragStartEvent } from '@dnd-kit/core';
+import { DndContext, DragOverlay, closestCorners, DragEndEvent, DragStartEvent, DragOverEvent } from '@dnd-kit/core';
 import { SortableContext, arrayMove } from '@dnd-kit/sortable';
 import { useState } from 'react';
 import { useTaskStore } from '../stores/taskStore';
@@ -9,79 +9,100 @@ import type { Task } from '../lib/types';
 
 export function BoardView() {
   const { tasks, setTasks, updateTask } = useTaskStore();
-  const [activeId, setActiveId] = useState<string | null>(null);
+  const [activeTask, setActiveTask] = useState<Task | null>(null);
 
-  const todoTasks = tasks.filter(task => !task.completed);
-  const completedTasks = tasks.filter(task => task.completed);
+  const columns = {
+    todo: tasks.filter(task => !task.completed),
+    completed: tasks.filter(task => task.completed)
+  };
 
   const handleDragStart = (event: DragStartEvent) => {
-    setActiveId(event.active.id as string);
+    const task = tasks.find(t => t.id === event.active.id);
+    if (task) {
+      setActiveTask(task);
+    }
+  };
+
+  const handleDragOver = (event: DragOverEvent) => {
+    const { active, over } = event;
+    if (!over) return;
+
+    const activeId = active.id;
+    const overId = over.id;
+
+    if (activeId === overId) return;
+
+    const isActiveATask = active.data.current?.type === 'Task';
+    const isOverATask = over.data.current?.type === 'Task';
+
+    if (!isActiveATask) return;
+
+    // Dropping over a column
+    if (overId === 'todo' || overId === 'completed') {
+      const task = tasks.find(t => t.id === activeId);
+      if (task) {
+        const newCompleted = overId === 'completed';
+        if (task.completed !== newCompleted) {
+          updateTask(task.id, { completed: newCompleted });
+        }
+      }
+    }
   };
 
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
-
+    
     if (!over) {
-      setActiveId(null);
+      setActiveTask(null);
       return;
     }
 
-    const activeTask = tasks.find(t => t.id === active.id);
-    if (!activeTask) {
-      setActiveId(null);
-      return;
-    }
-
-    // Handle dropping into columns
-    if (over.id === 'completed' || over.id === 'todo') {
-      const newCompleted = over.id === 'completed';
-      if (activeTask.completed !== newCompleted) {
-        updateTask(activeTask.id, { completed: newCompleted });
-      }
-    } else {
-      // Handle reordering within columns
+    if (active.id !== over.id) {
       const oldIndex = tasks.findIndex(t => t.id === active.id);
       const newIndex = tasks.findIndex(t => t.id === over.id);
-      
+
       if (oldIndex !== -1 && newIndex !== -1) {
         const newTasks = arrayMove(tasks, oldIndex, newIndex);
         setTasks(newTasks);
       }
+
+      // Handle column drops
+      if (over.id === 'todo' || over.id === 'completed') {
+        const task = tasks.find(t => t.id === active.id);
+        if (task) {
+          const newCompleted = over.id === 'completed';
+          updateTask(task.id, { completed: newCompleted });
+        }
+      }
     }
 
-    setActiveId(null);
+    setActiveTask(null);
   };
-
-  const handleDragCancel = () => {
-    setActiveId(null);
-  };
-
-  const activeTask = tasks.find(task => task.id === activeId);
 
   return (
     <DndContext
       collisionDetection={closestCorners}
       onDragStart={handleDragStart}
+      onDragOver={handleDragOver}
       onDragEnd={handleDragEnd}
-      onDragCancel={handleDragCancel}
     >
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <TaskColumn
           id="todo"
           title="To Do"
-          tasks={todoTasks}
+          tasks={columns.todo}
           status="todo"
         />
         <TaskColumn
           id="completed"
           title="Completed"
-          tasks={completedTasks}
+          tasks={columns.completed}
           status="completed"
         />
       </div>
 
       <DragOverlay>
-        {activeId && activeTask ? (
+        {activeTask ? (
           <TaskItem task={activeTask} compact />
         ) : null}
       </DragOverlay>
