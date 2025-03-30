@@ -1,85 +1,90 @@
 
-import { useState } from 'react';
+import { useState } from "react";
 import {
   DndContext,
+  DragEndEvent,
+  DragOverlay,
+  DragStartEvent,
+  MouseSensor,
+  TouchSensor,
   closestCenter,
-  KeyboardSensor,
-  PointerSensor,
   useSensor,
   useSensors,
-  DragEndEvent,
-} from '@dnd-kit/core';
+  pointerWithin,
+} from "@dnd-kit/core";
 import {
-  arrayMove,
   SortableContext,
-  sortableKeyboardCoordinates,
   verticalListSortingStrategy,
-} from '@dnd-kit/sortable';
-import { TaskItem } from './TaskItem';
-import { TaskModal } from './TaskModal';
-import { useTaskStore } from '../stores/taskStore';
-import type { Task } from '../lib/types';
+} from "@dnd-kit/sortable";
+import { TaskItem } from "./TaskItem";
+import { useTaskStore } from "../stores/taskStore";
+import { createPortal } from "react-dom";
 
-interface TaskListProps {
-  tasks: Task[];
-  projectId?: string;
-}
+export function TaskList({ compact = false }) {
+  const { tasks, reorderTasks } = useTaskStore();
+  const [activeId, setActiveId] = useState<string | null>(null);
+  
+  const mouseSensor = useSensor(MouseSensor, {
+    activationConstraint: {
+      distance: 5,
+    },
+  });
+  
+  const touchSensor = useSensor(TouchSensor, {
+    activationConstraint: {
+      delay: 100,
+      tolerance: 5,
+    },
+  });
+  
+  const sensors = useSensors(mouseSensor, touchSensor);
 
-export function TaskList({ tasks, projectId }: TaskListProps) {
-  const [editingTask, setEditingTask] = useState<Task | undefined>();
-  const { toggleTask, deleteTask, updateTask, reorderTasks } = useTaskStore();
-
-  const sensors = useSensors(
-    useSensor(PointerSensor),
-    useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates,
-    })
-  );
+  const handleDragStart = (event: DragStartEvent) => {
+    setActiveId(event.active.id as string);
+  };
 
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
-
+    
     if (over && active.id !== over.id) {
-      const oldIndex = tasks.findIndex(t => t.id === active.id);
-      const newIndex = tasks.findIndex(t => t.id === over.id);
-      
-      const newTasks = arrayMove(tasks, oldIndex, newIndex);
-      reorderTasks(newTasks);
+      const oldIndex = tasks.findIndex((task) => task.id === active.id);
+      const newIndex = tasks.findIndex((task) => task.id === over.id);
+      reorderTasks(oldIndex, newIndex);
     }
+    
+    setActiveId(null);
   };
 
-  return (
-    <>
-      <div className="space-y-2">
-        <DndContext
-          sensors={sensors}
-          collisionDetection={closestCenter}
-          onDragEnd={handleDragEnd}
-        >
-          <SortableContext
-            items={tasks.map(t => t.id)}
-            strategy={verticalListSortingStrategy}
-          >
-            {tasks.map((task) => (
-              <TaskItem
-                key={task.id}
-                task={task}
-                onToggle={toggleTask}
-                onDelete={deleteTask}
-                onEdit={setEditingTask}
-              />
-            ))}
-          </SortableContext>
-        </DndContext>
-      </div>
+  const handleDragCancel = () => {
+    setActiveId(null);
+  };
 
-      <TaskModal
-        isOpen={!!editingTask}
-        onClose={() => setEditingTask(undefined)}
-        onSubmit={updateTask}
-        initialProjectId={projectId}
-        editingTask={editingTask}
-      />
-    </>
+  const activeTask = activeId ? tasks.find((task) => task.id === activeId) : null;
+
+  return (
+    <DndContext
+      sensors={sensors}
+      collisionDetection={closestCenter}
+      onDragStart={handleDragStart}
+      onDragEnd={handleDragEnd}
+      onDragCancel={handleDragCancel}
+    >
+      <SortableContext items={tasks.map(t => t.id)} strategy={verticalListSortingStrategy}>
+        <div className="flex flex-col gap-2">
+          {tasks.map((task) => (
+            <TaskItem key={task.id} task={task} compact={compact} />
+          ))}
+        </div>
+      </SortableContext>
+
+      {createPortal(
+        <DragOverlay adjustScale={true}>
+          {activeTask ? (
+            <TaskItem task={activeTask} compact={compact} />
+          ) : null}
+        </DragOverlay>,
+        document.body
+      )}
+    </DndContext>
   );
 }
