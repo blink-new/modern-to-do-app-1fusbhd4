@@ -2,40 +2,30 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
-  CheckSquare, 
-  Calendar, 
-  Settings,
-  Menu,
-  X,
   Bell,
   Search,
-  LayoutDashboard,
-  LogOut
+  Menu,
+  X,
 } from "lucide-react";
 import { cn } from "../../lib/utils";
+import { Sidebar } from "../Sidebar";
 
 interface LayoutProps {
   children: React.ReactNode;
-  view: 'tasks' | 'dashboard' | 'settings';
-  onViewChange: (view: 'tasks' | 'dashboard' | 'settings') => void;
+  view: string;
+  onViewChange: (view: string) => void;
 }
 
 export function Layout({ children, view, onViewChange }: LayoutProps) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
 
-  const navItems = [
-    { icon: CheckSquare, label: "Tasks", value: 'tasks', active: view === 'tasks' },
-    { icon: LayoutDashboard, label: "Dashboard", value: 'dashboard', active: view === 'dashboard' },
-    { icon: Settings, label: "Settings", value: 'settings', active: view === 'settings' },
-  ];
-
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Sidebar */}
       <aside
         className={cn(
-          "fixed left-0 top-0 z-40 h-screen w-64 transform border-r border-gray-200 bg-white transition-transform duration-200 ease-in-out",
+          "fixed left-0 top-0 z-40 h-screen transform border-r border-gray-200 bg-white transition-transform duration-200 ease-in-out",
           !isSidebarOpen && "-translate-x-full"
         )}
       >
@@ -49,29 +39,8 @@ export function Layout({ children, view, onViewChange }: LayoutProps) {
           </button>
         </div>
 
-        <nav className="mt-4 px-3">
-          {navItems.map((item) => (
-            <button
-              key={item.label}
-              onClick={() => onViewChange(item.value as any)}
-              className={cn(
-                "mb-1 flex w-full items-center rounded-lg px-3 py-2 text-sm font-medium transition-colors",
-                item.active
-                  ? "bg-blue-50 text-blue-600"
-                  : "text-gray-700 hover:bg-gray-100"
-              )}
-            >
-              <item.icon className="mr-3 h-5 w-5" />
-              {item.label}
-            </button>
-          ))}
-        </nav>
-
-        <div className="absolute bottom-4 left-0 right-0 px-4">
-          <button className="flex w-full items-center rounded-lg px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100">
-            <LogOut className="mr-3 h-5 w-5" />
-            Sign Out
-          </button>
+        <div className="h-[calc(100vh-4rem)]">
+          <Sidebar activeTab={view} onTabChange={onViewChange} />
         </div>
       </aside>
 
