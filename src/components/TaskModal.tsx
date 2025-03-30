@@ -1,9 +1,10 @@
 
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Calendar, Tag, AlertCircle } from 'lucide-react';
+import { X, Calendar, Tag, AlertCircle, Folder } from 'lucide-react';
 import type { Category, Priority, Task } from '../lib/types';
 import { generateId } from '../lib/utils';
+import { useProjectStore } from '../stores/projectStore';
 
 interface TaskModalProps {
   isOpen: boolean;
@@ -17,6 +18,9 @@ export function TaskModal({ isOpen, onClose, onSubmit }: TaskModalProps) {
   const [priority, setPriority] = useState<Priority>('medium');
   const [dueDate, setDueDate] = useState('');
   const [notes, setNotes] = useState('');
+  const [projectId, setProjectId] = useState<string | undefined>(undefined);
+  
+  const projects = useProjectStore((state) => state.projects);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -31,6 +35,7 @@ export function TaskModal({ isOpen, onClose, onSubmit }: TaskModalProps) {
       priority,
       dueDate: dueDate ? new Date(dueDate) : undefined,
       notes: notes.trim() || undefined,
+      projectId: projectId,
     };
 
     onSubmit(task);
@@ -44,6 +49,7 @@ export function TaskModal({ isOpen, onClose, onSubmit }: TaskModalProps) {
     setPriority('medium');
     setDueDate('');
     setNotes('');
+    setProjectId(undefined);
   };
 
   const handleClose = () => {
@@ -55,7 +61,6 @@ export function TaskModal({ isOpen, onClose, onSubmit }: TaskModalProps) {
     <AnimatePresence>
       {isOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
-          {/* Backdrop */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 0.5 }}
@@ -64,7 +69,6 @@ export function TaskModal({ isOpen, onClose, onSubmit }: TaskModalProps) {
             className="absolute inset-0 bg-black/40 backdrop-blur-sm"
           />
 
-          {/* Modal */}
           <motion.div
             initial={{ opacity: 0, scale: 0.95, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -73,7 +77,6 @@ export function TaskModal({ isOpen, onClose, onSubmit }: TaskModalProps) {
             className="relative w-[480px] mx-auto"
           >
             <div className="overflow-hidden rounded-xl bg-white shadow-xl ring-1 ring-black/5">
-              {/* Header */}
               <div className="flex items-center justify-between border-b border-gray-100 px-4 py-3">
                 <h2 className="text-base font-semibold text-gray-900">Create New Task</h2>
                 <button
@@ -84,10 +87,8 @@ export function TaskModal({ isOpen, onClose, onSubmit }: TaskModalProps) {
                 </button>
               </div>
 
-              {/* Form */}
               <form onSubmit={handleSubmit} className="p-4">
                 <div className="space-y-4">
-                  {/* Task Name */}
                   <div>
                     <input
                       type="text"
@@ -100,7 +101,6 @@ export function TaskModal({ isOpen, onClose, onSubmit }: TaskModalProps) {
                   </div>
 
                   <div className="grid grid-cols-2 gap-3">
-                    {/* Due Date */}
                     <div>
                       <label className="mb-1.5 flex items-center gap-2 text-xs font-medium text-gray-500">
                         <Calendar className="h-3.5 w-3.5" />
@@ -114,7 +114,6 @@ export function TaskModal({ isOpen, onClose, onSubmit }: TaskModalProps) {
                       />
                     </div>
 
-                    {/* Category */}
                     <div>
                       <label className="mb-1.5 flex items-center gap-2 text-xs font-medium text-gray-500">
                         <Tag className="h-3.5 w-3.5" />
@@ -133,7 +132,6 @@ export function TaskModal({ isOpen, onClose, onSubmit }: TaskModalProps) {
                       </select>
                     </div>
 
-                    {/* Priority */}
                     <div>
                       <label className="mb-1.5 flex items-center gap-2 text-xs font-medium text-gray-500">
                         <AlertCircle className="h-3.5 w-3.5" />
@@ -149,9 +147,27 @@ export function TaskModal({ isOpen, onClose, onSubmit }: TaskModalProps) {
                         <option value="high">High</option>
                       </select>
                     </div>
+
+                    <div>
+                      <label className="mb-1.5 flex items-center gap-2 text-xs font-medium text-gray-500">
+                        <Folder className="h-3.5 w-3.5" />
+                        Project
+                      </label>
+                      <select
+                        value={projectId || ''}
+                        onChange={(e) => setProjectId(e.target.value || undefined)}
+                        className="w-full rounded-lg border border-gray-200 bg-gray-50/50 px-3 py-1.5 text-sm focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-blue-500"
+                      >
+                        <option value="">No Project</option>
+                        {projects.map((project) => (
+                          <option key={project.id} value={project.id}>
+                            {project.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
                   </div>
 
-                  {/* Notes */}
                   <div>
                     <label className="mb-1.5 block text-xs font-medium text-gray-500">
                       Notes (optional)
@@ -166,7 +182,6 @@ export function TaskModal({ isOpen, onClose, onSubmit }: TaskModalProps) {
                   </div>
                 </div>
 
-                {/* Actions */}
                 <div className="mt-6 flex items-center justify-end gap-2">
                   <button
                     type="button"
