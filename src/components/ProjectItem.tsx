@@ -1,7 +1,7 @@
 
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { MoreVertical, GripVertical } from 'lucide-react';
+import { MoreVertical, GripVertical, FolderClosed } from 'lucide-react';
 import { useState } from 'react';
 import type { Project } from '../lib/types';
 import { useProjectStore } from '../stores/projectStore';
@@ -51,9 +51,11 @@ export function ProjectItem({ project, isActive, onSelect, onEdit }: ProjectItem
         className="flex flex-1 items-center gap-2 text-sm"
       >
         <div
-          className="h-3 w-3 rounded-full"
+          className="flex h-4 w-4 items-center justify-center rounded"
           style={{ backgroundColor: project.color }}
-        />
+        >
+          <FolderClosed className="h-3 w-3 text-white" />
+        </div>
         <span className={isActive ? 'font-medium text-blue-600' : 'text-gray-700'}>
           {project.name}
         </span>
