@@ -3,22 +3,22 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Calendar, Tag, AlertCircle, Folder } from 'lucide-react';
 import type { Category, Priority, Task } from '../lib/types';
-import { generateId } from '../lib/utils';
 import { useProjectStore } from '../stores/projectStore';
 
 interface TaskModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSubmit: (task: Task) => void;
+  initialProjectId?: string;
 }
 
-export function TaskModal({ isOpen, onClose, onSubmit }: TaskModalProps) {
+export function TaskModal({ isOpen, onClose, onSubmit, initialProjectId }: TaskModalProps) {
   const [content, setContent] = useState('');
   const [category, setCategory] = useState<Category>('personal');
   const [priority, setPriority] = useState<Priority>('medium');
   const [dueDate, setDueDate] = useState('');
   const [notes, setNotes] = useState('');
-  const [projectId, setProjectId] = useState<string | undefined>(undefined);
+  const [projectId, setProjectId] = useState<string | undefined>(initialProjectId);
   
   const projects = useProjectStore((state) => state.projects);
 
@@ -27,7 +27,7 @@ export function TaskModal({ isOpen, onClose, onSubmit }: TaskModalProps) {
     if (!content.trim()) return;
 
     const task: Task = {
-      id: generateId(),
+      id: crypto.randomUUID(),
       content: content.trim(),
       completed: false,
       createdAt: new Date(),
@@ -35,7 +35,7 @@ export function TaskModal({ isOpen, onClose, onSubmit }: TaskModalProps) {
       priority,
       dueDate: dueDate ? new Date(dueDate) : undefined,
       notes: notes.trim() || undefined,
-      projectId: projectId,
+      projectId,
     };
 
     onSubmit(task);
@@ -49,12 +49,7 @@ export function TaskModal({ isOpen, onClose, onSubmit }: TaskModalProps) {
     setPriority('medium');
     setDueDate('');
     setNotes('');
-    setProjectId(undefined);
-  };
-
-  const handleClose = () => {
-    resetForm();
-    onClose();
+    setProjectId(initialProjectId);
   };
 
   return (
@@ -65,7 +60,7 @@ export function TaskModal({ isOpen, onClose, onSubmit }: TaskModalProps) {
             initial={{ opacity: 0 }}
             animate={{ opacity: 0.5 }}
             exit={{ opacity: 0 }}
-            onClick={handleClose}
+            onClick={onClose}
             className="absolute inset-0 bg-black/40 backdrop-blur-sm"
           />
 
@@ -73,16 +68,12 @@ export function TaskModal({ isOpen, onClose, onSubmit }: TaskModalProps) {
             initial={{ opacity: 0, scale: 0.95, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
-            transition={{ type: "spring", damping: 20, stiffness: 300 }}
-            className="relative w-[480px] mx-auto"
+            className="relative w-[480px]"
           >
-            <div className="overflow-hidden rounded-xl bg-white shadow-xl ring-1 ring-black/5">
-              <div className="flex items-center justify-between border-b border-gray-100 px-4 py-3">
-                <h2 className="text-base font-semibold text-gray-900">Create New Task</h2>
-                <button
-                  onClick={handleClose}
-                  className="rounded-lg p-1 hover:bg-gray-50 active:bg-gray-100"
-                >
+            <div className="overflow-hidden rounded-xl bg-white shadow-xl">
+              <div className="flex items-center justify-between border-b px-4 py-3">
+                <h2 className="text-base font-semibold">Create New Task</h2>
+                <button onClick={onClose} className="rounded-lg p-1 hover:bg-gray-50">
                   <X className="h-5 w-5 text-gray-400" />
                 </button>
               </div>
@@ -95,7 +86,7 @@ export function TaskModal({ isOpen, onClose, onSubmit }: TaskModalProps) {
                       value={content}
                       onChange={(e) => setContent(e.target.value)}
                       placeholder="What needs to be done?"
-                      className="w-full rounded-lg border border-gray-200 bg-gray-50/50 px-3 py-2 text-base placeholder:text-gray-400 focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-blue-500"
+                      className="w-full rounded-lg border border-gray-200 px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
                       autoFocus
                     />
                   </div>
@@ -110,7 +101,7 @@ export function TaskModal({ isOpen, onClose, onSubmit }: TaskModalProps) {
                         type="datetime-local"
                         value={dueDate}
                         onChange={(e) => setDueDate(e.target.value)}
-                        className="w-full rounded-lg border border-gray-200 bg-gray-50/50 px-3 py-1.5 text-sm focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-blue-500"
+                        className="w-full rounded-lg border border-gray-200 px-3 py-1.5 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
                       />
                     </div>
 
@@ -122,7 +113,7 @@ export function TaskModal({ isOpen, onClose, onSubmit }: TaskModalProps) {
                       <select
                         value={category}
                         onChange={(e) => setCategory(e.target.value as Category)}
-                        className="w-full rounded-lg border border-gray-200 bg-gray-50/50 px-3 py-1.5 text-sm focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-blue-500"
+                        className="w-full rounded-lg border border-gray-200 px-3 py-1.5 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
                       >
                         <option value="personal">Personal</option>
                         <option value="work">Work</option>
@@ -140,7 +131,7 @@ export function TaskModal({ isOpen, onClose, onSubmit }: TaskModalProps) {
                       <select
                         value={priority}
                         onChange={(e) => setPriority(e.target.value as Priority)}
-                        className="w-full rounded-lg border border-gray-200 bg-gray-50/50 px-3 py-1.5 text-sm focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-blue-500"
+                        className="w-full rounded-lg border border-gray-200 px-3 py-1.5 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
                       >
                         <option value="low">Low</option>
                         <option value="medium">Medium</option>
@@ -156,7 +147,7 @@ export function TaskModal({ isOpen, onClose, onSubmit }: TaskModalProps) {
                       <select
                         value={projectId || ''}
                         onChange={(e) => setProjectId(e.target.value || undefined)}
-                        className="w-full rounded-lg border border-gray-200 bg-gray-50/50 px-3 py-1.5 text-sm focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-blue-500"
+                        className="w-full rounded-lg border border-gray-200 px-3 py-1.5 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
                       >
                         <option value="">No Project</option>
                         {projects.map((project) => (
@@ -177,23 +168,23 @@ export function TaskModal({ isOpen, onClose, onSubmit }: TaskModalProps) {
                       onChange={(e) => setNotes(e.target.value)}
                       placeholder="Add any additional details..."
                       rows={3}
-                      className="w-full rounded-lg border border-gray-200 bg-gray-50/50 px-3 py-2 text-sm placeholder:text-gray-400 focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-blue-500"
+                      className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
                     />
                   </div>
                 </div>
 
-                <div className="mt-6 flex items-center justify-end gap-2">
+                <div className="mt-6 flex justify-end gap-2">
                   <button
                     type="button"
-                    onClick={handleClose}
-                    className="rounded-lg px-3 py-1.5 text-sm font-medium text-gray-600 hover:bg-gray-50 active:bg-gray-100"
+                    onClick={onClose}
+                    className="rounded-lg px-3 py-1.5 text-sm font-medium text-gray-600 hover:bg-gray-50"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
                     disabled={!content.trim()}
-                    className="rounded-lg bg-blue-500 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-600 active:bg-blue-700 disabled:opacity-50"
+                    className="rounded-lg bg-blue-500 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-600 disabled:opacity-50"
                   >
                     Create Task
                   </button>

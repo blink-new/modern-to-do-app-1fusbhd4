@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X } from 'lucide-react';
 import { useProjectStore } from '../stores/projectStore';
+import type { Project } from '../lib/types';
 
 const COLORS = [
   '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEEAD',
@@ -12,19 +13,30 @@ const COLORS = [
 interface ProjectModalProps {
   isOpen: boolean;
   onClose: () => void;
+  editingProject?: Project;
 }
 
-export function ProjectModal({ isOpen, onClose }: ProjectModalProps) {
-  const [name, setName] = useState('');
-  const [description, setDescription] = useState('');
-  const [color, setColor] = useState(COLORS[0]);
-  const addProject = useProjectStore((state) => state.addProject);
+export function ProjectModal({ isOpen, onClose, editingProject }: ProjectModalProps) {
+  const [name, setName] = useState(editingProject?.name || '');
+  const [description, setDescription] = useState(editingProject?.description || '');
+  const [color, setColor] = useState(editingProject?.color || COLORS[0]);
+  
+  const { addProject, updateProject } = useProjectStore();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) return;
 
-    addProject(name.trim(), description.trim(), color);
+    if (editingProject) {
+      updateProject(editingProject.id, {
+        name: name.trim(),
+        description: description.trim(),
+        color,
+      });
+    } else {
+      addProject(name.trim(), description.trim(), color);
+    }
+    
     resetForm();
     onClose();
   };
@@ -55,7 +67,9 @@ export function ProjectModal({ isOpen, onClose }: ProjectModalProps) {
           >
             <div className="overflow-hidden rounded-xl bg-white shadow-xl">
               <div className="flex items-center justify-between border-b px-4 py-3">
-                <h2 className="text-base font-semibold">Create New Project</h2>
+                <h2 className="text-base font-semibold">
+                  {editingProject ? 'Edit Project' : 'Create New Project'}
+                </h2>
                 <button onClick={onClose} className="rounded-lg p-1 hover:bg-gray-50">
                   <X className="h-5 w-5 text-gray-400" />
                 </button>
@@ -100,8 +114,8 @@ export function ProjectModal({ isOpen, onClose }: ProjectModalProps) {
                           key={c}
                           type="button"
                           onClick={() => setColor(c)}
-                          className={`h-6 w-6 rounded-full ${
-                            color === c ? 'ring-2 ring-offset-2' : ''
+                          className={`h-6 w-6 rounded-full transition-transform ${
+                            color === c ? 'ring-2 ring-offset-2 scale-110' : ''
                           }`}
                           style={{ backgroundColor: c }}
                         />
@@ -123,7 +137,7 @@ export function ProjectModal({ isOpen, onClose }: ProjectModalProps) {
                     disabled={!name.trim()}
                     className="rounded-lg bg-blue-500 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-600 disabled:opacity-50"
                   >
-                    Create Project
+                    {editingProject ? 'Save Changes' : 'Create Project'}
                   </button>
                 </div>
               </form>

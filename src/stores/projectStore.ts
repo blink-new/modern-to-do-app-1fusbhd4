@@ -9,6 +9,7 @@ interface ProjectStore {
   addProject: (name: string, description: string, color: string) => void;
   deleteProject: (id: string) => void;
   updateProject: (id: string, updates: Partial<Omit<Project, 'id' | 'createdAt'>>) => void;
+  reorderProjects: (projects: Project[]) => void;
 }
 
 export const useProjectStore = create<ProjectStore>()(
@@ -21,6 +22,7 @@ export const useProjectStore = create<ProjectStore>()(
           name,
           description,
           color,
+          order: Date.now(),
           createdAt: new Date(),
         };
         set((state) => ({
@@ -38,6 +40,9 @@ export const useProjectStore = create<ProjectStore>()(
             project.id === id ? { ...project, ...updates } : project
           ),
         }));
+      },
+      reorderProjects: (projects) => {
+        set({ projects });
       },
     }),
     {

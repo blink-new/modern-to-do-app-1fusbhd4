@@ -30,7 +30,7 @@ export function TaskItem({ task, onToggle, onDelete }: TaskItemProps) {
       <div className="flex items-start gap-3">
         <button
           onClick={() => onToggle(task.id)}
-          className={`mt-1 h-5 w-5 shrink-0 rounded-md border-2 ${
+          className={`mt-1 h-5 w-5 shrink-0 rounded-md border-2 transition-colors ${
             task.completed
               ? 'border-blue-500 bg-blue-500 text-white'
               : 'border-gray-300'
@@ -64,7 +64,7 @@ export function TaskItem({ task, onToggle, onDelete }: TaskItemProps) {
             </p>
             {project && (
               <div
-                className="rounded-full px-2 py-0.5 text-xs font-medium"
+                className="rounded-full px-2 py-0.5 text-xs font-medium transition-colors"
                 style={{
                   backgroundColor: `${project.color}20`,
                   color: project.color,
