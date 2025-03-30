@@ -34,24 +34,54 @@ export function TaskItem({ task, compact, onEdit }: TaskItemProps) {
     transition,
   };
 
+  const handleCheckboxClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    toggleTask(task.id);
+  };
+
+  const handleEditClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    onEdit?.(task);
+  };
+
+  const handleDeleteClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    deleteTask(task.id);
+  };
+
   if (compact) {
     return (
       <div
         ref={setNodeRef}
         style={style}
-        {...attributes}
-        {...listeners}
         className={`group relative rounded-lg border bg-white p-3 shadow-sm transition-shadow hover:shadow-md ${
           task.completed ? 'opacity-75' : ''
         }`}
       >
         <div className="flex items-start gap-3">
-          <input
-            type="checkbox"
-            checked={task.completed}
-            onChange={() => toggleTask(task.id)}
-            className="mt-1 h-4 w-4 rounded border-gray-300"
-          />
+          {/* Drag Handle */}
+          <button
+            className="mt-1 cursor-grab touch-none text-gray-400 opacity-0 transition-opacity group-hover:opacity-100"
+            {...attributes}
+            {...listeners}
+          >
+            <GripVertical className="h-4 w-4" />
+          </button>
+
+          {/* Checkbox */}
+          <div 
+            className="flex h-4 w-4 items-center justify-center"
+            onClick={handleCheckboxClick}
+          >
+            <input
+              type="checkbox"
+              checked={task.completed}
+              onChange={() => {}} // Handled by onClick
+              className="h-4 w-4 cursor-pointer rounded border-gray-300"
+            />
+          </div>
+
+          {/* Content */}
           <div className="flex-1 space-y-1">
             <p className={`text-sm ${task.completed ? 'line-through' : ''}`}>
               {task.title}
@@ -68,17 +98,18 @@ export function TaskItem({ task, compact, onEdit }: TaskItemProps) {
           </div>
         </div>
         
-        <div className="absolute right-2 top-2 flex opacity-0 transition-opacity group-hover:opacity-100">
+        {/* Actions */}
+        <div className="absolute right-2 top-2 flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">
           {onEdit && (
             <button
-              onClick={() => onEdit(task)}
+              onClick={handleEditClick}
               className="rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
             >
               <Pencil className="h-4 w-4" />
             </button>
           )}
           <button
-            onClick={() => deleteTask(task.id)}
+            onClick={handleDeleteClick}
             className="rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-red-600"
           >
             <Trash2 className="h-4 w-4" />
@@ -92,24 +123,34 @@ export function TaskItem({ task, compact, onEdit }: TaskItemProps) {
     <div
       ref={setNodeRef}
       style={style}
-      {...attributes}
-      {...listeners}
       className={`group relative rounded-xl border bg-white p-4 shadow-sm transition-all hover:shadow-md ${
         task.completed ? 'opacity-75' : ''
       }`}
     >
-      <div className="absolute left-4 top-4 cursor-move opacity-0 transition-opacity group-hover:opacity-100">
-        <GripVertical className="h-5 w-5 text-gray-400" />
-      </div>
-      
-      <div className="ml-8 flex items-start gap-3">
-        <input
-          type="checkbox"
-          checked={task.completed}
-          onChange={() => toggleTask(task.id)}
-          className="mt-1 h-4 w-4 rounded border-gray-300"
-        />
+      <div className="flex items-start gap-4">
+        {/* Drag Handle */}
+        <button
+          className="mt-1 cursor-grab touch-none text-gray-400 opacity-0 transition-opacity group-hover:opacity-100"
+          {...attributes}
+          {...listeners}
+        >
+          <GripVertical className="h-5 w-5" />
+        </button>
+
+        {/* Checkbox */}
+        <div 
+          className="flex h-4 w-4 items-center justify-center"
+          onClick={handleCheckboxClick}
+        >
+          <input
+            type="checkbox"
+            checked={task.completed}
+            onChange={() => {}} // Handled by onClick
+            className="h-4 w-4 cursor-pointer rounded border-gray-300"
+          />
+        </div>
         
+        {/* Content */}
         <div className="flex-1 space-y-1">
           <p className={`font-medium ${task.completed ? 'line-through' : ''}`}>
             {task.title}
@@ -142,17 +183,18 @@ export function TaskItem({ task, compact, onEdit }: TaskItemProps) {
           )}
         </div>
 
-        <div className="flex opacity-0 transition-opacity group-hover:opacity-100">
+        {/* Actions */}
+        <div className="flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">
           {onEdit && (
             <button
-              onClick={() => onEdit(task)}
+              onClick={handleEditClick}
               className="rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
             >
               <Pencil className="h-4 w-4" />
             </button>
           )}
           <button
-            onClick={() => deleteTask(task.id)}
+            onClick={handleDeleteClick}
             className="rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-red-600"
           >
             <Trash2 className="h-4 w-4" />
