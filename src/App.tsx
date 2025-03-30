@@ -9,6 +9,7 @@ import { Settings } from './components/Settings';
 import { useTaskStore } from './stores/taskStore';
 import { Plus } from 'lucide-react';
 import { Button } from './components/ui/button';
+import type { TaskFilter } from './lib/types';
 
 export default function App() {
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
@@ -68,7 +69,7 @@ export default function App() {
                 onOpenModal={() => setIsTaskModalOpen(true)}
                 onCloseModal={() => setIsTaskModalOpen(false)}
                 onAddTask={addTask}
-                filter={{ dueDate: 'today' }}
+                initialFilter={{ dueDate: 'today' }}
               />
             } 
           />
@@ -81,7 +82,7 @@ export default function App() {
                 onOpenModal={() => setIsTaskModalOpen(true)}
                 onCloseModal={() => setIsTaskModalOpen(false)}
                 onAddTask={addTask}
-                filter={{ dueDate: 'week' }}
+                initialFilter={{ dueDate: 'week' }}
               />
             } 
           />
@@ -96,12 +97,7 @@ interface TasksViewProps {
   onOpenModal: () => void;
   onCloseModal: () => void;
   onAddTask: (task: any) => void;
-  filter?: Partial<{
-    dueDate: 'today' | 'week' | 'overdue' | null;
-    category: string;
-    priority: string;
-    completed: boolean;
-  }>;
+  initialFilter?: Partial<TaskFilter>;
 }
 
 function TasksView({ 
@@ -109,9 +105,55 @@ function TasksView({
   onOpenModal, 
   onCloseModal, 
   onAddTask,
-  filter 
+  initialFilter 
 }: TasksViewProps) {
   const [viewMode, setViewMode] = useState<'list' | 'board'>('list');
+  const [filter, setFilter] = useState<TaskFilter>({
+    sortBy: 'dueDate',
+    sortOrder: 'asc',
+    ...initialFilter
+  });
+
+  const handleFilterChange = (value: string) => {
+    switch (value) {
+      case 'all':
+        setFilter({
+          ...filter,
+          completed: undefined,
+          dueDate: undefined
+        });
+        break;
+      case 'today':
+        setFilter({
+          ...filter,
+          completed: false,
+          dueDate: 'today'
+        });
+        break;
+      case 'upcoming':
+        setFilter({
+          ...filter,
+          completed: false,
+          dueDate: 'week'
+        });
+        break;
+      case 'completed':
+        setFilter({
+          ...filter,
+          completed: true,
+          dueDate: undefined
+        });
+        break;
+    }
+  };
+
+  // Determine the current filter value for the select
+  const getCurrentFilterValue = () => {
+    if (filter.completed === true) return 'completed';
+    if (filter.dueDate === 'today') return 'today';
+    if (filter.dueDate === 'week') return 'upcoming';
+    return 'all';
+  };
 
   return (
     <div className="space-y-8">
@@ -129,7 +171,8 @@ function TasksView({
           <div className="relative">
             <select 
               className="h-9 rounded-lg border border-gray-200 bg-white pl-3 pr-8 text-sm focus:border-blue-500 focus:ring-blue-500"
-              defaultValue="all"
+              value={getCurrentFilterValue()}
+              onChange={(e) => handleFilterChange(e.target.value)}
             >
               <option value="all">All Tasks</option>
               <option value="today">Today</option>
