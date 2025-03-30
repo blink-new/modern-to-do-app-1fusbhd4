@@ -7,7 +7,7 @@ import { TaskModal } from './components/TaskModal';
 import { Dashboard } from './components/Dashboard';
 import { Settings } from './components/Settings';
 import { useTaskStore } from './stores/taskStore';
-import { Plus } from 'lucide-react';
+import { Plus, Filter } from 'lucide-react';
 import { Button } from './components/ui/button';
 import type { TaskFilter } from './lib/types';
 
@@ -108,6 +108,7 @@ function TasksView({
   initialFilter 
 }: TasksViewProps) {
   const [viewMode, setViewMode] = useState<'list' | 'board'>('list');
+  const [searchQuery, setSearchQuery] = useState('');
   const [filter, setFilter] = useState<TaskFilter>({
     sortBy: 'dueDate',
     sortOrder: 'asc',
@@ -147,14 +148,6 @@ function TasksView({
     }
   };
 
-  // Determine the current filter value for the select
-  const getCurrentFilterValue = () => {
-    if (filter.completed === true) return 'completed';
-    if (filter.dueDate === 'today') return 'today';
-    if (filter.dueDate === 'week') return 'upcoming';
-    return 'all';
-  };
-
   return (
     <div className="space-y-8">
       {/* Header */}
@@ -165,21 +158,28 @@ function TasksView({
         </p>
       </div>
 
-      {/* Controls */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <div className="relative">
-            <select 
-              className="h-9 rounded-lg border border-gray-200 bg-white pl-3 pr-8 text-sm focus:border-blue-500 focus:ring-blue-500"
-              value={getCurrentFilterValue()}
-              onChange={(e) => handleFilterChange(e.target.value)}
-            >
-              <option value="all">All Tasks</option>
-              <option value="today">Today</option>
-              <option value="upcoming">Upcoming</option>
-              <option value="completed">Completed</option>
-            </select>
+      {/* Search and Controls */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-center gap-4 flex-1">
+          <div className="relative flex-1 max-w-md">
+            <input
+              type="text"
+              placeholder="Search tasks..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full h-9 rounded-lg border border-gray-200 bg-white pl-3 pr-8 text-sm focus:border-blue-500 focus:ring-blue-500"
+            />
           </div>
+          <select 
+            className="h-9 rounded-lg border border-gray-200 bg-white pl-3 pr-8 text-sm focus:border-blue-500 focus:ring-blue-500"
+            value={filter.completed === true ? 'completed' : filter.dueDate || 'all'}
+            onChange={(e) => handleFilterChange(e.target.value)}
+          >
+            <option value="all">All Tasks</option>
+            <option value="today">Today</option>
+            <option value="upcoming">Upcoming</option>
+            <option value="completed">Completed</option>
+          </select>
         </div>
 
         <Button
@@ -193,7 +193,11 @@ function TasksView({
       </div>
 
       {/* Task List */}
-      <TaskList viewMode={viewMode} filter={filter} />
+      <TaskList 
+        viewMode={viewMode} 
+        filter={filter}
+        searchQuery={searchQuery}
+      />
 
       {/* Task Modal */}
       <TaskModal
