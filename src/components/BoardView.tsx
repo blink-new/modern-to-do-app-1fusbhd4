@@ -54,14 +54,39 @@ const categoryIcons = {
   other: '📌',
 };
 
+function DragPreview({ task }: { task: Task }) {
+  return (
+    <motion.div
+      initial={{ rotate: 0, scale: 1 }}
+      animate={{ 
+        rotate: -3,
+        scale: 1.05,
+        boxShadow: "0 5px 15px rgba(0,0,0,0.1)"
+      }}
+      transition={{ duration: 0.2 }}
+      className="bg-white rounded-lg border border-gray-200 p-3"
+    >
+      <TaskItem task={task} compact />
+    </motion.div>
+  );
+}
+
+function DropPreview({ task }: { task: Task }) {
+  return (
+    <div className="opacity-50 pointer-events-none border-2 border-dashed border-gray-300 rounded-lg p-2">
+      <TaskItem task={task} compact />
+    </div>
+  );
+}
+
 function DroppableColumn({ 
   category, 
   tasks, 
-  isOverlay 
+  activeTask,
 }: { 
   category: Category; 
   tasks: Task[]; 
-  isOverlay?: boolean;
+  activeTask: Task | null;
 }) {
   const { setNodeRef, isOver } = useDroppable({
     id: category,
@@ -72,7 +97,9 @@ function DroppableColumn({
   return (
     <div
       ref={setNodeRef}
-      className={`rounded-xl border p-4 transition-colors duration-200 ${bgColor}`}
+      className={`rounded-xl border p-4 transition-all duration-200 ${bgColor} ${
+        isOver ? 'scale-[1.02]' : ''
+      }`}
     >
       <div className="mb-4 flex items-center justify-between">
         <div className="flex items-center gap-2">
@@ -86,19 +113,20 @@ function DroppableColumn({
         </span>
       </div>
 
-      <div className="space-y-2">
+      <div className="space-y-2 min-h-[100px]">
         <SortableContext
           items={tasks.map(t => t.id)}
           strategy={verticalListSortingStrategy}
         >
           <AnimatePresence>
-            {tasks.map(task => (
+            {tasks.map((task) => (
               <motion.div
                 key={task.id}
                 layout
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -20 }}
+                className={activeTask?.id === task.id ? 'opacity-50' : ''}
               >
                 <TaskItem
                   task={task}
@@ -109,11 +137,23 @@ function DroppableColumn({
           </AnimatePresence>
         </SortableContext>
 
-        {tasks.length === 0 && (
-          <div className={`rounded-lg border border-dashed border-gray-200 p-4 transition-colors duration-200 ${isOver ? 'bg-gray-50' : ''}`}>
-            <p className="text-center text-sm text-gray-500">
-              Drop tasks here
-            </p>
+        {/* Drop Preview */}
+        <AnimatePresence>
+          {isOver && activeTask && activeTask.category !== category && (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.15 }}
+            >
+              <DropPreview task={activeTask} />
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {tasks.length === 0 && !isOver && (
+          <div className="rounded-lg border border-dashed border-gray-200 p-4 text-center">
+            <p className="text-sm text-gray-500">Drop tasks here</p>
           </div>
         )}
       </div>
@@ -123,13 +163,13 @@ function DroppableColumn({
 
 export function BoardView({ tasks }: BoardViewProps) {
   const [activeId, setActiveId] = useState<string | null>(null);
-  const [activeCategory, setActiveCategory] = useState<Category | null>(null);
   const { updateTask } = useTaskStore();
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
-        distance: 5,
+        distance: 0, // Activate immediately on mouse down
+        tolerance: 5, // Small tolerance to prevent accidental activations
       },
     }),
     useSensor(KeyboardSensor, {
@@ -139,16 +179,11 @@ export function BoardView({ tasks }: BoardViewProps) {
 
   const handleDragStart = (event: DragStartEvent) => {
     setActiveId(event.active.id as string);
-    const task = tasks.find(t => t.id === event.active.id);
-    if (task) {
-      setActiveCategory(task.category);
-    }
   };
 
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
     setActiveId(null);
-    setActiveCategory(null);
 
     if (!over) return;
 
@@ -165,7 +200,6 @@ export function BoardView({ tasks }: BoardViewProps) {
 
   const handleDragCancel = () => {
     setActiveId(null);
-    setActiveCategory(null);
   };
 
   const activeTask = activeId ? tasks.find(task => task.id === activeId) : null;
@@ -184,21 +218,14 @@ export function BoardView({ tasks }: BoardViewProps) {
             key={category}
             category={category}
             tasks={tasks.filter(task => task.category === category)}
+            activeTask={activeTask}
           />
         ))}
       </div>
 
-      <DragOverlay>
+      <DragOverlay dropAnimation={null}>
         {activeTask && (
-          <div 
-            className="rounded-lg border bg-white p-4 shadow-lg opacity-90 cursor-grabbing"
-            style={{ 
-              transform: 'rotate(-3deg)',
-              width: '100%'
-            }}
-          >
-            <TaskItem task={activeTask} compact />
-          </div>
+          <DragPreview task={activeTask} />
         )}
       </DragOverlay>
     </DndContext>
