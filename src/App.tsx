@@ -1,23 +1,9 @@
 
 import { useState } from "react";
-import {
-  DndContext,
-  closestCenter,
-  KeyboardSensor,
-  PointerSensor,
-  useSensor,
-  useSensors,
-} from "@dnd-kit/core";
-import {
-  arrayMove,
-  SortableContext,
-  sortableKeyboardCoordinates,
-  verticalListSortingStrategy,
-} from "@dnd-kit/sortable";
 import { AnimatePresence } from "framer-motion";
 import { Plus, AlertCircle, ListFilter } from "lucide-react";
 import { Layout } from "./components/ui/Layout";
-import { TaskItem } from "./components/TaskItem";
+import { TaskList } from "./components/TaskList";
 import { TaskModal } from "./components/TaskModal";
 import { Dashboard } from "./components/Dashboard";
 import { Settings } from "./components/Settings";
@@ -37,24 +23,7 @@ export default function App() {
     soundEnabled: true,
   });
 
-  const { tasks, addTask, toggleTask, deleteTask } = useTaskStore();
-
-  const sensors = useSensors(
-    useSensor(PointerSensor),
-    useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates,
-    })
-  );
-
-  const handleDragEnd = (event: any) => {
-    const { active, over } = event;
-    if (active.id !== over.id) {
-      const oldIndex = tasks.findIndex((t) => t.id === active.id);
-      const newIndex = tasks.findIndex((t) => t.id === over.id);
-      const newTasks = arrayMove(tasks, oldIndex, newIndex);
-      // Note: We would need to add reordering to the store if we want to persist the order
-    }
-  };
+  const { tasks, addTask } = useTaskStore();
 
   const filteredTasks = tasks.filter(task => {
     if (filter === "active") return !task.completed;
@@ -94,29 +63,11 @@ export default function App() {
               </button>
             </div>
 
-            <DndContext
-              sensors={sensors}
-              collisionDetection={closestCenter}
-              onDragEnd={handleDragEnd}
-            >
-              <SortableContext
-                items={filteredTasks.map(t => t.id)}
-                strategy={verticalListSortingStrategy}
-              >
-                <div className="space-y-3">
-                  <AnimatePresence>
-                    {filteredTasks.map((task) => (
-                      <TaskItem
-                        key={task.id}
-                        task={task}
-                        onToggle={toggleTask}
-                        onDelete={deleteTask}
-                      />
-                    ))}
-                  </AnimatePresence>
-                </div>
-              </SortableContext>
-            </DndContext>
+            <div className="space-y-3">
+              <AnimatePresence>
+                <TaskList tasks={filteredTasks} />
+              </AnimatePresence>
+            </div>
 
             {filteredTasks.length === 0 && (
               <div className="mt-8 rounded-xl border border-dashed border-gray-300 p-8 text-center">

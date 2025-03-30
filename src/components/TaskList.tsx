@@ -21,12 +21,13 @@ import { useTaskStore } from '../stores/taskStore';
 import type { Task } from '../lib/types';
 
 interface TaskListProps {
+  tasks: Task[];
   projectId?: string;
 }
 
-export function TaskList({ projectId }: TaskListProps) {
+export function TaskList({ tasks, projectId }: TaskListProps) {
   const [editingTask, setEditingTask] = useState<Task | undefined>();
-  const { tasks, toggleTask, deleteTask, updateTask, reorderTasks } = useTaskStore();
+  const { toggleTask, deleteTask, updateTask, reorderTasks } = useTaskStore();
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -35,18 +36,14 @@ export function TaskList({ projectId }: TaskListProps) {
     })
   );
 
-  const filteredTasks = projectId
-    ? tasks.filter(task => task.projectId === projectId)
-    : tasks;
-
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
 
     if (over && active.id !== over.id) {
-      const oldIndex = filteredTasks.findIndex(t => t.id === active.id);
-      const newIndex = filteredTasks.findIndex(t => t.id === over.id);
+      const oldIndex = tasks.findIndex(t => t.id === active.id);
+      const newIndex = tasks.findIndex(t => t.id === over.id);
       
-      const newTasks = arrayMove(filteredTasks, oldIndex, newIndex);
+      const newTasks = arrayMove(tasks, oldIndex, newIndex);
       reorderTasks(newTasks);
     }
   };
@@ -60,10 +57,10 @@ export function TaskList({ projectId }: TaskListProps) {
           onDragEnd={handleDragEnd}
         >
           <SortableContext
-            items={filteredTasks.map(t => t.id)}
+            items={tasks.map(t => t.id)}
             strategy={verticalListSortingStrategy}
           >
-            {filteredTasks.map((task) => (
+            {tasks.map((task) => (
               <TaskItem
                 key={task.id}
                 task={task}
