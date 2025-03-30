@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { Layout } from './components/ui/Layout';
 import { TaskList } from './components/TaskList';
 import { TaskModal } from './components/TaskModal';
+import { Dashboard } from './components/Dashboard';
 import { useTaskStore } from './stores/taskStore';
 import { LayoutGrid, List, Plus } from 'lucide-react';
 import { Button } from './components/ui/button';
@@ -11,10 +12,14 @@ export default function App() {
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
   const [viewMode, setViewMode] = useState<'list' | 'board'>('list');
   const [currentView, setCurrentView] = useState('inbox');
-  const { addTask } = useTaskStore();
+  const { tasks, addTask } = useTaskStore();
 
-  return (
-    <Layout view={currentView} onViewChange={setCurrentView}>
+  const renderContent = () => {
+    if (currentView === 'dashboard') {
+      return <Dashboard tasks={tasks} />;
+    }
+
+    return (
       <div className="space-y-8">
         {/* Header */}
         <div>
@@ -75,17 +80,23 @@ export default function App() {
 
         {/* Task List */}
         <TaskList viewMode={viewMode} />
-
-        {/* Task Modal */}
-        <TaskModal
-          isOpen={isTaskModalOpen}
-          onClose={() => setIsTaskModalOpen(false)}
-          onSubmit={(task) => {
-            addTask(task);
-            setIsTaskModalOpen(false);
-          }}
-        />
       </div>
+    );
+  };
+
+  return (
+    <Layout view={currentView} onViewChange={setCurrentView}>
+      {renderContent()}
+      
+      {/* Task Modal */}
+      <TaskModal
+        isOpen={isTaskModalOpen}
+        onClose={() => setIsTaskModalOpen(false)}
+        onSubmit={(task) => {
+          addTask(task);
+          setIsTaskModalOpen(false);
+        }}
+      />
     </Layout>
   );
 }
