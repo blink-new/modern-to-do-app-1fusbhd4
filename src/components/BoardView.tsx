@@ -8,7 +8,7 @@ import { TaskItem } from './TaskItem';
 import type { Task } from '../lib/types';
 
 export function BoardView() {
-  const { tasks, setTasks } = useTaskStore();
+  const { tasks, setTasks, updateTask } = useTaskStore();
   const [activeId, setActiveId] = useState<string | null>(null);
 
   const todoTasks = tasks.filter(task => !task.completed);
@@ -26,6 +26,17 @@ export function BoardView() {
       return;
     }
 
+    // Handle dropping into columns
+    if (over.id === 'todo' || over.id === 'completed') {
+      const task = tasks.find(t => t.id === active.id);
+      if (task) {
+        updateTask(task.id, { completed: over.id === 'completed' });
+      }
+      setActiveId(null);
+      return;
+    }
+
+    // Handle reordering within columns
     if (active.id !== over.id) {
       const oldIndex = tasks.findIndex(task => task.id === active.id);
       const newIndex = tasks.findIndex(task => task.id === over.id);

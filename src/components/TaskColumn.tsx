@@ -1,5 +1,6 @@
 
 import { useDroppable } from '@dnd-kit/core';
+import { SortableContext } from '@dnd-kit/sortable';
 import type { Task } from '../lib/types';
 import { TaskItem } from './TaskItem';
 import { useTaskStore } from '../stores/taskStore';
@@ -15,8 +16,6 @@ export function TaskColumn({ title, tasks, status }: TaskColumnProps) {
     id: status,
   });
 
-  const { toggleTask } = useTaskStore();
-
   return (
     <div
       ref={setNodeRef}
@@ -29,15 +28,20 @@ export function TaskColumn({ title, tasks, status }: TaskColumnProps) {
         </span>
       </div>
 
-      <div className="flex flex-col gap-2">
+      <div className="flex flex-1 flex-col gap-2">
         {tasks.map((task) => (
           <TaskItem
             key={task.id}
             task={task}
             compact
-            onEdit={() => {}}
           />
         ))}
+        
+        {tasks.length === 0 && (
+          <div className="flex flex-1 items-center justify-center rounded-lg border-2 border-dashed border-gray-200 p-4 text-center text-sm text-gray-400">
+            Drop tasks here
+          </div>
+        )}
       </div>
     </div>
   );
