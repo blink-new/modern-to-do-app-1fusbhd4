@@ -54,13 +54,23 @@ const categoryIcons = {
   other: '📌',
 };
 
+function DropPreview({ task }: { task: Task }) {
+  return (
+    <div className="opacity-50 pointer-events-none">
+      <TaskItem task={task} compact />
+    </div>
+  );
+}
+
 function DroppableColumn({ 
   category, 
   tasks, 
+  activeTask,
   isOverlay 
 }: { 
   category: Category; 
   tasks: Task[]; 
+  activeTask: Task | null;
   isOverlay?: boolean;
 }) {
   const { setNodeRef, isOver } = useDroppable({
@@ -68,6 +78,9 @@ function DroppableColumn({
   });
 
   const bgColor = isOver ? categoryActiveColors[category] : categoryColors[category];
+  
+  // Find the index where the task would be dropped
+  const dropIndex = activeTask && isOver ? tasks.length : -1;
 
   return (
     <div
@@ -92,7 +105,7 @@ function DroppableColumn({
           strategy={verticalListSortingStrategy}
         >
           <AnimatePresence>
-            {tasks.map(task => (
+            {tasks.map((task, index) => (
               <motion.div
                 key={task.id}
                 layout
@@ -106,10 +119,23 @@ function DroppableColumn({
                 />
               </motion.div>
             ))}
+            
+            {/* Drop Preview */}
+            {isOver && activeTask && activeTask.category !== category && (
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 10 }}
+                transition={{ duration: 0.2 }}
+                className="border-2 border-dashed border-gray-300 rounded-lg p-1"
+              >
+                <DropPreview task={activeTask} />
+              </motion.div>
+            )}
           </AnimatePresence>
         </SortableContext>
 
-        {tasks.length === 0 && (
+        {tasks.length === 0 && !isOver && (
           <div className={`rounded-lg border border-dashed border-gray-200 p-4 transition-colors duration-200 ${isOver ? 'bg-gray-50' : ''}`}>
             <p className="text-center text-sm text-gray-500">
               Drop tasks here
@@ -124,12 +150,13 @@ function DroppableColumn({
 export function BoardView({ tasks }: BoardViewProps) {
   const [activeId, setActiveId] = useState<string | null>(null);
   const [activeCategory, setActiveCategory] = useState<Category | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
   const { updateTask } = useTaskStore();
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
-        distance: 5,
+        distance: 0, // Activate immediately on mouse down
       },
     }),
     useSensor(KeyboardSensor, {
@@ -139,6 +166,7 @@ export function BoardView({ tasks }: BoardViewProps) {
 
   const handleDragStart = (event: DragStartEvent) => {
     setActiveId(event.active.id as string);
+    setIsDragging(true);
     const task = tasks.find(t => t.id === event.active.id);
     if (task) {
       setActiveCategory(task.category);
@@ -149,6 +177,7 @@ export function BoardView({ tasks }: BoardViewProps) {
     const { active, over } = event;
     setActiveId(null);
     setActiveCategory(null);
+    setIsDragging(false);
 
     if (!over) return;
 
@@ -166,6 +195,7 @@ export function BoardView({ tasks }: BoardViewProps) {
   const handleDragCancel = () => {
     setActiveId(null);
     setActiveCategory(null);
+    setIsDragging(false);
   };
 
   const activeTask = activeId ? tasks.find(task => task.id === activeId) : null;
@@ -184,21 +214,24 @@ export function BoardView({ tasks }: BoardViewProps) {
             key={category}
             category={category}
             tasks={tasks.filter(task => task.category === category)}
+            activeTask={activeTask}
           />
         ))}
       </div>
 
       <DragOverlay>
         {activeTask && (
-          <div 
-            className="rounded-lg border bg-white p-4 shadow-lg opacity-90 cursor-grabbing"
-            style={{ 
-              transform: 'rotate(-3deg)',
-              width: '100%'
+          <motion.div 
+            initial={{ rotate: 0 }}
+            animate={{ 
+              rotate: -3,
+              scale: 1.02,
             }}
+            transition={{ duration: 0.2 }}
+            className="rounded-lg border bg-white p-4 shadow-lg opacity-90 cursor-grabbing"
           >
             <TaskItem task={activeTask} compact />
-          </div>
+          </motion.div>
         )}
       </DragOverlay>
     </DndContext>
