@@ -9,6 +9,7 @@ interface TaskStore {
   toggleTask: (id: string) => void;
   deleteTask: (id: string) => void;
   updateTask: (task: Task) => void;
+  reorderTasks: (tasks: Task[]) => void;
 }
 
 export const useTaskStore = create<TaskStore>()(
@@ -34,6 +35,10 @@ export const useTaskStore = create<TaskStore>()(
           tasks: state.tasks.map((t) =>
             t.id === updatedTask.id ? updatedTask : t
           ),
+        })),
+      reorderTasks: (tasks) =>
+        set(() => ({
+          tasks,
         })),
     }),
     {

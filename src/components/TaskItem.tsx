@@ -1,35 +1,68 @@
 
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Calendar, Tag, Trash2 } from 'lucide-react';
+import { Calendar, Tag, Trash2, GripVertical } from 'lucide-react';
 import type { Task } from '../lib/types';
 import { useProjectStore } from '../stores/projectStore';
+import { useSortable } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+import { Button } from './ui/button';
 
 interface TaskItemProps {
   task: Task;
   onToggle: (id: string) => void;
   onDelete: (id: string) => void;
+  onEdit: (task: Task) => void;
 }
 
-export function TaskItem({ task, onToggle, onDelete }: TaskItemProps) {
+export function TaskItem({ task, onToggle, onDelete, onEdit }: TaskItemProps) {
   const [isHovered, setIsHovered] = useState(false);
   const project = useProjectStore(
     (state) => task.projectId ? state.projects.find(p => p.id === task.projectId) : undefined
   );
 
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: task.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
   return (
     <motion.div
+      ref={setNodeRef}
+      style={style}
       layout
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -10 }}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
-      className="group relative rounded-lg border border-gray-200 bg-white p-4 shadow-sm transition-shadow hover:shadow-md"
+      onClick={() => onEdit(task)}
+      className="group relative cursor-pointer rounded-lg border border-gray-200 bg-white p-4 shadow-sm transition-shadow hover:shadow-md"
     >
       <div className="flex items-start gap-3">
         <button
-          onClick={() => onToggle(task.id)}
+          {...listeners}
+          {...attributes}
+          className="mt-1 cursor-grab touch-none p-1 opacity-0 transition-opacity group-hover:opacity-100"
+        >
+          <GripVertical className="h-4 w-4 text-gray-400" />
+        </button>
+
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            onToggle(task.id);
+          }}
           className={`mt-1 h-5 w-5 shrink-0 rounded-md border-2 transition-colors ${
             task.completed
               ? 'border-blue-500 bg-blue-500 text-white'
@@ -93,14 +126,17 @@ export function TaskItem({ task, onToggle, onDelete }: TaskItemProps) {
           )}
         </div>
 
-        <motion.button
-          initial={false}
-          animate={{ opacity: isHovered ? 1 : 0 }}
-          onClick={() => onDelete(task.id)}
-          className="shrink-0 rounded-md p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={(e) => {
+            e.stopPropagation();
+            onDelete(task.id);
+          }}
+          className="shrink-0 opacity-0 group-hover:opacity-100"
         >
           <Trash2 className="h-4 w-4" />
-        </motion.button>
+        </Button>
       </div>
     </motion.div>
   );
