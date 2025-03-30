@@ -1,9 +1,11 @@
 
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { GripVertical, Pencil, Trash2 } from 'lucide-react';
+import { GripVertical, MoreHorizontal } from 'lucide-react';
 import type { Project } from '../lib/types';
 import { useProjectStore } from '../stores/projectStore';
+import { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface ProjectItemProps {
   project: Project;
@@ -14,6 +16,7 @@ interface ProjectItemProps {
 
 export function ProjectItem({ project, isActive, onSelect, onEdit }: ProjectItemProps) {
   const { deleteProject } = useProjectStore();
+  const [showMenu, setShowMenu] = useState(false);
   
   const {
     attributes,
@@ -32,45 +35,81 @@ export function ProjectItem({ project, isActive, onSelect, onEdit }: ProjectItem
     <div
       ref={setNodeRef}
       style={style}
-      className={`group flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
-        isActive
-          ? 'bg-blue-50 text-blue-600'
-          : 'text-gray-600 hover:bg-gray-100'
-      }`}
+      className="relative"
     >
-      <button
-        {...attributes}
-        {...listeners}
-        className="cursor-grab opacity-0 group-hover:opacity-100"
+      <div
+        className={`group flex items-center gap-2 rounded-lg px-3 py-2 text-sm transition-colors ${
+          isActive
+            ? 'bg-blue-50 text-blue-600'
+            : 'text-gray-600 hover:bg-gray-100'
+        }`}
       >
-        <GripVertical className="h-4 w-4 text-gray-400" />
-      </button>
-
-      <button
-        onClick={onSelect}
-        className="flex flex-1 items-center gap-2"
-      >
-        <div
-          className="h-3 w-3 rounded-full"
-          style={{ backgroundColor: project.color }}
-        />
-        <span className="truncate">{project.name}</span>
-      </button>
-
-      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100">
         <button
-          onClick={onEdit}
-          className="rounded p-1 hover:bg-gray-200"
+          {...attributes}
+          {...listeners}
+          className="cursor-grab opacity-0 group-hover:opacity-100"
         >
-          <Pencil className="h-3.5 w-3.5 text-gray-500" />
+          <GripVertical className="h-4 w-4 text-gray-400" />
         </button>
+
         <button
-          onClick={() => deleteProject(project.id)}
-          className="rounded p-1 hover:bg-gray-200"
+          onClick={onSelect}
+          className="flex flex-1 items-center gap-2"
         >
-          <Trash2 className="h-3.5 w-3.5 text-gray-500" />
+          <div
+            className="h-2.5 w-2.5 rounded-full"
+            style={{ backgroundColor: project.color }}
+          />
+          <span className="truncate">{project.name}</span>
+        </button>
+
+        <button
+          onClick={() => setShowMenu(!showMenu)}
+          className="rounded p-1 opacity-0 transition-opacity hover:bg-gray-200 group-hover:opacity-100"
+        >
+          <MoreHorizontal className="h-4 w-4 text-gray-500" />
         </button>
       </div>
+
+      <AnimatePresence>
+        {showMenu && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-20"
+              onClick={() => setShowMenu(false)}
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              transition={{ duration: 0.1 }}
+              className="absolute right-0 top-0 z-30 mt-8 w-48 overflow-hidden rounded-lg border border-gray-200 bg-white py-1 shadow-lg"
+            >
+              <button
+                onClick={() => {
+                  onEdit();
+                  setShowMenu(false);
+                }}
+                className="flex w-full items-center px-4 py-2 text-sm text-gray-600 hover:bg-gray-50"
+              >
+                Edit project
+              </button>
+              <button
+                onClick={() => {
+                  deleteProject(project.id);
+                  setShowMenu(false);
+                }}
+                className="flex w-full items-center px-4 py-2 text-sm text-red-600 hover:bg-red-50"
+              >
+                Delete project
+              </button>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
