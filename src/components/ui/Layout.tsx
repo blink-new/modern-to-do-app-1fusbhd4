@@ -1,6 +1,7 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useLocation, Outlet, useNavigate } from "react-router-dom";
 import { 
   Bell,
   Search,
@@ -10,15 +11,17 @@ import {
 import { cn } from "../../lib/utils";
 import { Sidebar } from "../Sidebar";
 
-interface LayoutProps {
-  children: React.ReactNode;
-  view: string;
-  onViewChange: (view: string) => void;
-}
-
-export function Layout({ children, view, onViewChange }: LayoutProps) {
+export function Layout() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
+  const location = useLocation();
+  const navigate = useNavigate();
+  
+  const currentView = location.pathname.split('/')[1] || 'dashboard';
+
+  const handleViewChange = (view: string) => {
+    navigate(`/${view}`);
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -40,7 +43,7 @@ export function Layout({ children, view, onViewChange }: LayoutProps) {
         </div>
 
         <div className="h-[calc(100vh-4rem)]">
-          <Sidebar activeTab={view} onTabChange={onViewChange} />
+          <Sidebar activeTab={currentView} onTabChange={handleViewChange} />
         </div>
       </aside>
 
@@ -91,13 +94,13 @@ export function Layout({ children, view, onViewChange }: LayoutProps) {
         <main className="mx-auto max-w-5xl p-6">
           <AnimatePresence mode="wait">
             <motion.div
-              key={view}
+              key={location.pathname}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
               transition={{ duration: 0.2 }}
             >
-              {children}
+              <Outlet />
             </motion.div>
           </AnimatePresence>
         </main>

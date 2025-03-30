@@ -1,102 +1,107 @@
 
-import { useState } from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Layout } from './components/ui/Layout';
 import { TaskList } from './components/TaskList';
 import { TaskModal } from './components/TaskModal';
 import { Dashboard } from './components/Dashboard';
+import { Settings } from './components/Settings';
 import { useTaskStore } from './stores/taskStore';
-import { LayoutGrid, List, Plus } from 'lucide-react';
+import { useState } from 'react';
+import { Plus } from 'lucide-react';
 import { Button } from './components/ui/button';
 
 export default function App() {
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
-  const [viewMode, setViewMode] = useState<'list' | 'board'>('list');
-  const [currentView, setCurrentView] = useState('inbox');
   const { tasks, addTask } = useTaskStore();
 
-  const renderContent = () => {
-    if (currentView === 'dashboard') {
-      return <Dashboard tasks={tasks} />;
-    }
+  return (
+    <Router>
+      <Routes>
+        <Route path="/" element={<Layout />}>
+          <Route index element={<Navigate to="/dashboard" replace />} />
+          <Route 
+            path="dashboard" 
+            element={<Dashboard tasks={tasks} />} 
+          />
+          <Route 
+            path="tasks/*" 
+            element={
+              <TasksView 
+                isModalOpen={isTaskModalOpen}
+                onOpenModal={() => setIsTaskModalOpen(true)}
+                onCloseModal={() => setIsTaskModalOpen(false)}
+                onAddTask={(task) => {
+                  addTask(task);
+                  setIsTaskModalOpen(false);
+                }}
+              />
+            } 
+          />
+          <Route path="settings" element={<Settings />} />
+        </Route>
+      </Routes>
+    </Router>
+  );
+}
 
-    return (
-      <div className="space-y-8">
-        {/* Header */}
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">My Tasks</h1>
-          <p className="mt-1 text-sm text-gray-500">
-            Manage and organize your tasks efficiently
-          </p>
-        </div>
-
-        {/* Controls */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <div className="relative">
-              <select 
-                className="h-9 rounded-lg border border-gray-200 bg-white pl-3 pr-8 text-sm focus:border-blue-500 focus:ring-blue-500"
-                defaultValue="all"
-              >
-                <option value="all">All Tasks</option>
-                <option value="today">Today</option>
-                <option value="upcoming">Upcoming</option>
-                <option value="completed">Completed</option>
-              </select>
-            </div>
-
-            <div className="flex overflow-hidden rounded-lg border border-gray-200 bg-white">
-              <button
-                onClick={() => setViewMode('list')}
-                className={`flex h-9 w-9 items-center justify-center transition-colors ${
-                  viewMode === 'list' 
-                    ? 'bg-gray-100 text-gray-900' 
-                    : 'bg-white text-gray-500 hover:bg-gray-50'
-                }`}
-              >
-                <List className="h-4 w-4" />
-              </button>
-              <button
-                onClick={() => setViewMode('board')}
-                className={`flex h-9 w-9 items-center justify-center border-l transition-colors ${
-                  viewMode === 'board'
-                    ? 'bg-gray-100 text-gray-900'
-                    : 'bg-white text-gray-500 hover:bg-gray-50'
-                }`}
-              >
-                <LayoutGrid className="h-4 w-4" />
-              </button>
-            </div>
-          </div>
-
-          <Button
-            onClick={() => setIsTaskModalOpen(true)}
-            size="sm"
-            className="gap-1.5"
-          >
-            <Plus className="h-4 w-4" />
-            Add Task
-          </Button>
-        </div>
-
-        {/* Task List */}
-        <TaskList viewMode={viewMode} />
-      </div>
-    );
-  };
+function TasksView({ 
+  isModalOpen, 
+  onOpenModal, 
+  onCloseModal, 
+  onAddTask 
+}: { 
+  isModalOpen: boolean;
+  onOpenModal: () => void;
+  onCloseModal: () => void;
+  onAddTask: (task: any) => void;
+}) {
+  const [viewMode, setViewMode] = useState<'list' | 'board'>('list');
 
   return (
-    <Layout view={currentView} onViewChange={setCurrentView}>
-      {renderContent()}
-      
+    <div className="space-y-8">
+      {/* Header */}
+      <div>
+        <h1 className="text-2xl font-bold text-gray-900">My Tasks</h1>
+        <p className="mt-1 text-sm text-gray-500">
+          Manage and organize your tasks efficiently
+        </p>
+      </div>
+
+      {/* Controls */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <div className="relative">
+            <select 
+              className="h-9 rounded-lg border border-gray-200 bg-white pl-3 pr-8 text-sm focus:border-blue-500 focus:ring-blue-500"
+              defaultValue="all"
+            >
+              <option value="all">All Tasks</option>
+              <option value="today">Today</option>
+              <option value="upcoming">Upcoming</option>
+              <option value="completed">Completed</option>
+            </select>
+          </div>
+        </div>
+
+        <Button
+          onClick={onOpenModal}
+          size="sm"
+          className="gap-1.5"
+        >
+          <Plus className="h-4 w-4" />
+          Add Task
+        </Button>
+      </div>
+
+      {/* Task List */}
+      <TaskList viewMode={viewMode} />
+
       {/* Task Modal */}
       <TaskModal
-        isOpen={isTaskModalOpen}
-        onClose={() => setIsTaskModalOpen(false)}
-        onSubmit={(task) => {
-          addTask(task);
-          setIsTaskModalOpen(false);
-        }}
+        isOpen={isModalOpen}
+        onClose={onCloseModal}
+        onSubmit={onAddTask}
       />
-    </Layout>
+    </div>
   );
 }
