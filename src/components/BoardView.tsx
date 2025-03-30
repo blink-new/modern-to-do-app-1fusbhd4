@@ -11,11 +11,9 @@ import {
   DragEndEvent,
   DragStartEvent,
   useDroppable,
-  DragOverEvent,
 } from '@dnd-kit/core';
 import {
   SortableContext,
-  arrayMove,
   sortableKeyboardCoordinates,
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
@@ -23,6 +21,7 @@ import { Category, Task } from '../lib/types';
 import { TaskItem } from './TaskItem';
 import { useTaskStore } from '../stores/taskStore';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Plus } from 'lucide-react';
 
 interface BoardViewProps {
   tasks: Task[];
@@ -31,19 +30,19 @@ interface BoardViewProps {
 const categories: Category[] = ['personal', 'work', 'shopping', 'health', 'other'];
 
 const categoryColors = {
-  personal: 'bg-purple-50 border-purple-200',
-  work: 'bg-blue-50 border-blue-200',
-  shopping: 'bg-green-50 border-green-200',
-  health: 'bg-red-50 border-red-200',
-  other: 'bg-gray-50 border-gray-200',
+  personal: 'bg-purple-50/50 border-purple-200 hover:bg-purple-50',
+  work: 'bg-blue-50/50 border-blue-200 hover:bg-blue-50',
+  shopping: 'bg-green-50/50 border-green-200 hover:bg-green-50',
+  health: 'bg-red-50/50 border-red-200 hover:bg-red-50',
+  other: 'bg-gray-50/50 border-gray-200 hover:bg-gray-50',
 };
 
 const categoryActiveColors = {
-  personal: 'bg-purple-100 border-purple-300',
-  work: 'bg-blue-100 border-blue-300',
-  shopping: 'bg-green-100 border-green-300',
-  health: 'bg-red-100 border-red-300',
-  other: 'bg-gray-100 border-gray-300',
+  personal: 'bg-purple-100 border-purple-300 shadow-purple-100',
+  work: 'bg-blue-100 border-blue-300 shadow-blue-100',
+  shopping: 'bg-green-100 border-green-300 shadow-green-100',
+  health: 'bg-red-100 border-red-300 shadow-red-100',
+  other: 'bg-gray-100 border-gray-300 shadow-gray-100',
 };
 
 const categoryIcons = {
@@ -54,6 +53,14 @@ const categoryIcons = {
   other: '📌',
 };
 
+const categoryTitles = {
+  personal: 'Personal Tasks',
+  work: 'Work Projects',
+  shopping: 'Shopping List',
+  health: 'Health & Wellness',
+  other: 'Other Tasks',
+};
+
 function DragPreview({ task }: { task: Task }) {
   return (
     <motion.div
@@ -61,10 +68,14 @@ function DragPreview({ task }: { task: Task }) {
       animate={{ 
         rotate: -3,
         scale: 1.05,
-        boxShadow: "0 5px 15px rgba(0,0,0,0.1)"
+        boxShadow: "0 8px 20px rgba(0,0,0,0.15)"
       }}
-      transition={{ duration: 0.2 }}
-      className="bg-white rounded-lg border border-gray-200 p-3"
+      transition={{ 
+        type: "spring",
+        stiffness: 400,
+        damping: 25
+      }}
+      className="bg-white rounded-xl border border-gray-200 p-3 backdrop-blur-sm bg-white/95"
     >
       <TaskItem task={task} compact />
     </motion.div>
@@ -73,7 +84,7 @@ function DragPreview({ task }: { task: Task }) {
 
 function DropPreview({ task }: { task: Task }) {
   return (
-    <div className="opacity-50 pointer-events-none border-2 border-dashed border-gray-300 rounded-lg p-2">
+    <div className="opacity-40 pointer-events-none border-2 border-dashed border-gray-300 rounded-xl p-2 bg-gray-50/50">
       <TaskItem task={task} compact />
     </div>
   );
@@ -95,69 +106,85 @@ function DroppableColumn({
   const bgColor = isOver ? categoryActiveColors[category] : categoryColors[category];
 
   return (
-    <div
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4 }}
       ref={setNodeRef}
-      className={`rounded-xl border p-4 transition-all duration-200 ${bgColor} ${
-        isOver ? 'scale-[1.02]' : ''
+      className={`rounded-xl border backdrop-blur-sm transition-all duration-300 ${bgColor} ${
+        isOver ? 'scale-[1.02] shadow-lg' : 'hover:scale-[1.01] hover:shadow-md'
       }`}
     >
-      <div className="mb-4 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <span className="text-xl">{categoryIcons[category]}</span>
-          <h3 className="text-sm font-medium capitalize text-gray-900">
-            {category}
-          </h3>
+      <div className="p-4">
+        <div className="mb-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span className="text-xl">{categoryIcons[category]}</span>
+              <h3 className="text-sm font-semibold text-gray-900">
+                {categoryTitles[category]}
+              </h3>
+            </div>
+            <span className="flex items-center gap-1 rounded-full bg-white/80 backdrop-blur-sm px-2.5 py-1 text-xs font-medium text-gray-600 border border-gray-100">
+              {tasks.length}
+              <span className="text-gray-400">tasks</span>
+            </span>
+          </div>
         </div>
-        <span className="rounded-full bg-white px-2 py-1 text-xs font-medium text-gray-600">
-          {tasks.length}
-        </span>
-      </div>
 
-      <div className="space-y-2 min-h-[100px]">
-        <SortableContext
-          items={tasks.map(t => t.id)}
-          strategy={verticalListSortingStrategy}
-        >
+        <div className="space-y-2.5 min-h-[150px]">
+          <SortableContext
+            items={tasks.map(t => t.id)}
+            strategy={verticalListSortingStrategy}
+          >
+            <AnimatePresence mode="popLayout">
+              {tasks.map((task) => (
+                <motion.div
+                  key={task.id}
+                  layout
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.9 }}
+                  transition={{ duration: 0.2 }}
+                  className={activeTask?.id === task.id ? 'opacity-40' : ''}
+                >
+                  <TaskItem
+                    task={task}
+                    compact
+                  />
+                </motion.div>
+              ))}
+            </AnimatePresence>
+          </SortableContext>
+
           <AnimatePresence>
-            {tasks.map((task) => (
+            {isOver && activeTask && activeTask.category !== category && (
               <motion.div
-                key={task.id}
-                layout
-                initial={{ opacity: 0, y: 20 }}
+                initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
-                className={activeTask?.id === task.id ? 'opacity-50' : ''}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.15 }}
               >
-                <TaskItem
-                  task={task}
-                  compact
-                />
+                <DropPreview task={activeTask} />
               </motion.div>
-            ))}
+            )}
           </AnimatePresence>
-        </SortableContext>
 
-        {/* Drop Preview */}
-        <AnimatePresence>
-          {isOver && activeTask && activeTask.category !== category && (
+          {tasks.length === 0 && !isOver && (
             <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.15 }}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.2 }}
+              className="rounded-xl border border-dashed border-gray-200 p-4 text-center bg-white/50"
             >
-              <DropPreview task={activeTask} />
+              <button className="w-full flex items-center justify-center gap-2 text-sm text-gray-500 hover:text-gray-900 transition-colors">
+                <Plus size={16} />
+                <span>Add task</span>
+              </button>
             </motion.div>
           )}
-        </AnimatePresence>
-
-        {tasks.length === 0 && !isOver && (
-          <div className="rounded-lg border border-dashed border-gray-200 p-4 text-center">
-            <p className="text-sm text-gray-500">Drop tasks here</p>
-          </div>
-        )}
+        </div>
       </div>
-    </div>
+    </motion.div>
   );
 }
 
@@ -168,8 +195,8 @@ export function BoardView({ tasks }: BoardViewProps) {
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
-        distance: 0, // Activate immediately on mouse down
-        tolerance: 5, // Small tolerance to prevent accidental activations
+        distance: 0,
+        tolerance: 5,
       },
     }),
     useSensor(KeyboardSensor, {
@@ -212,7 +239,7 @@ export function BoardView({ tasks }: BoardViewProps) {
       onDragEnd={handleDragEnd}
       onDragCancel={handleDragCancel}
     >
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-5">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-5 p-6">
         {categories.map(category => (
           <DroppableColumn
             key={category}
