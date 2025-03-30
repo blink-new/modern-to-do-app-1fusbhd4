@@ -1,11 +1,10 @@
 
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { GripVertical, MoreHorizontal } from 'lucide-react';
+import { MoreVertical, GripVertical } from 'lucide-react';
+import { useState } from 'react';
 import type { Project } from '../lib/types';
 import { useProjectStore } from '../stores/projectStore';
-import { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 
 interface ProjectItemProps {
   project: Project;
@@ -15,8 +14,8 @@ interface ProjectItemProps {
 }
 
 export function ProjectItem({ project, isActive, onSelect, onEdit }: ProjectItemProps) {
-  const { deleteProject } = useProjectStore();
   const [showMenu, setShowMenu] = useState(false);
+  const { deleteProject } = useProjectStore();
   
   const {
     attributes,
@@ -35,81 +34,68 @@ export function ProjectItem({ project, isActive, onSelect, onEdit }: ProjectItem
     <div
       ref={setNodeRef}
       style={style}
-      className="relative"
+      className={`group relative flex items-center gap-2 rounded-lg px-2 py-1.5 ${
+        isActive ? 'bg-blue-50' : 'hover:bg-gray-100'
+      }`}
     >
-      <div
-        className={`group flex items-center gap-2 rounded-lg px-3 py-2 text-sm transition-colors ${
-          isActive
-            ? 'bg-blue-50 text-blue-600'
-            : 'text-gray-600 hover:bg-gray-100'
-        }`}
+      <button
+        {...attributes}
+        {...listeners}
+        className="cursor-grab opacity-0 group-hover:opacity-100"
       >
-        <button
-          {...attributes}
-          {...listeners}
-          className="cursor-grab opacity-0 group-hover:opacity-100"
-        >
-          <GripVertical className="h-4 w-4 text-gray-400" />
-        </button>
+        <GripVertical className="h-4 w-4 text-gray-400" />
+      </button>
 
-        <button
-          onClick={onSelect}
-          className="flex flex-1 items-center gap-2"
-        >
-          <div
-            className="h-2.5 w-2.5 rounded-full"
-            style={{ backgroundColor: project.color }}
-          />
-          <span className="truncate">{project.name}</span>
-        </button>
+      <button
+        onClick={onSelect}
+        className="flex flex-1 items-center gap-2 text-sm"
+      >
+        <div
+          className="h-3 w-3 rounded-full"
+          style={{ backgroundColor: project.color }}
+        />
+        <span className={isActive ? 'font-medium text-blue-600' : 'text-gray-700'}>
+          {project.name}
+        </span>
+      </button>
 
+      <div className="relative">
         <button
           onClick={() => setShowMenu(!showMenu)}
-          className="rounded p-1 opacity-0 transition-opacity hover:bg-gray-200 group-hover:opacity-100"
+          className="rounded p-1 opacity-0 hover:bg-gray-200 group-hover:opacity-100"
         >
-          <MoreHorizontal className="h-4 w-4 text-gray-500" />
+          <MoreVertical className="h-4 w-4 text-gray-500" />
         </button>
-      </div>
 
-      <AnimatePresence>
         {showMenu && (
           <>
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="fixed inset-0 z-20"
+            <div
+              className="fixed inset-0 z-10"
               onClick={() => setShowMenu(false)}
             />
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              transition={{ duration: 0.1 }}
-              className="absolute right-0 top-0 z-30 mt-8 w-48 overflow-hidden rounded-lg border border-gray-200 bg-white py-1 shadow-lg"
-            >
+            <div className="absolute right-0 z-20 mt-1 w-48 rounded-md bg-white py-1 shadow-lg ring-1 ring-black ring-opacity-5">
               <button
                 onClick={() => {
                   onEdit();
                   setShowMenu(false);
                 }}
-                className="flex w-full items-center px-4 py-2 text-sm text-gray-600 hover:bg-gray-50"
+                className="block w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100"
               >
-                Edit project
+                Edit Project
               </button>
               <button
                 onClick={() => {
                   deleteProject(project.id);
                   setShowMenu(false);
                 }}
-                className="flex w-full items-center px-4 py-2 text-sm text-red-600 hover:bg-red-50"
+                className="block w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-gray-100"
               >
-                Delete project
+                Delete Project
               </button>
-            </motion.div>
+            </div>
           </>
         )}
-      </AnimatePresence>
+      </div>
     </div>
   );
 }
